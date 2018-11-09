@@ -1,0 +1,10 @@
+Data/*
+.git/*
+bin/
+include/
+lib/
+obj/
+*.dll
+*.depend
+*.layout
+*.gch
