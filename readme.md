@@ -6,6 +6,7 @@ Version C++ : C++14
 Compilateur: mingw32 inclus dans GCC 7.3.0
 Version OpenGL : 3.3
 Version GLM  : 0.9.8.5 	(gestion des outils mathématiques)
+
 Version GLFW : 3.2.1   	(gestion des fenêtres / contextes OpenGL)
 Version GLEW : 2.1.0	(gestion des extensions OpenGL)
 
