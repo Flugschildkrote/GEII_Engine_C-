@@ -1,7 +1,0 @@
-Mise en C++
-Ajout du Picking
-	- Ajout d'un atribut PickingID dans la classe GeomatricPrimitive
-	- Ajout d'un GeometricPrimitive* mPickingGeomPrimitive dans la classe MainApp
-	- Création d'une classe RenderPicking affichant les objets sur nivaux de gris en fonction de leur PickingID
-	- Dessin du RenderPicking lors d'un click et attribution de la valeur de mPickingGeomPrimitive selon le click
-	- Mouvement de l'objet pointé par mPickingGeomPrimitive lors de l'appui sur les touches dirrectinnelles

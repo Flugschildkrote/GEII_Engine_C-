@@ -16,7 +16,8 @@ public:
 protected:
     void destroy(void);
 
-    char getFormatSize(GLenum format) const;
+    char getComponentsFromFormat(GLenum format) const;
+    GLenum getFormatFromComponents(unsigned int components) const;
 
     unsigned int mWidth, mHeight;
     GLenum mGL_Format, mGL_InternalFormat;

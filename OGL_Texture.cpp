@@ -1,13 +1,16 @@
 #include "OGL_Texture.h"
-#include "ImageLoader.h"
 #include "geException.h"
 #include <iostream>
+
+#ifndef STB_IMAGE_IMPLEMENTATION
+#define STB_IMAGE_IMPLEMENTATION
+#endif // STB_IMAGE_IMPLEMENTATION
+
+#include "stb_image.h"
 
 OGL_Texture::OGL_Texture(const OGL_TextureCreateInfo &createInfo) : OGL_Object(), mWidth(0), mHeight(0), mGL_Format(GL_INVALID_ENUM), mGL_InternalFormat(GL_INVALID_ENUM), mHasMipMaps(false){
     glGenTextures(1, &mGL_ID);
     std::vector<uint8_t> *pixels = nullptr;
-
-    ImageLoader loader;
 
     if(!createInfo.fromFile_nFromBuffer){
         mHeight = createInfo.height;
@@ -15,30 +18,30 @@ OGL_Texture::OGL_Texture(const OGL_TextureCreateInfo &createInfo) : OGL_Object()
         mGL_Format = createInfo.format;
         pixels = createInfo.pixels;
     }else{
-        loader.loadFile(createInfo.sourceFile);
-        mWidth = (createInfo.flags & TEXTURE_FORCE_WIDTH) ? createInfo.width : loader.getWidth();
-        mHeight = (createInfo.flags & TEXTURE_FORCE_HEIGHT) ? createInfo.height : loader.getHeight();
-        mGL_Format = (createInfo.flags & TEXTURE_FORCE_FORMAT) ? createInfo.format : loader.getPixelFormat();
+        int width, height, channels;
+        stbi_set_flip_vertically_on_load(true);
+        unsigned char *c_pixels = stbi_load(createInfo.sourceFile.c_str(), &width, &height, &channels, 0);
 
-        unsigned int lWidth = loader.getWidth();
-        unsigned int lHeight = loader.getHeight();
-        int lFormatSize = getFormatSize(loader.getPixelFormat());
-        if(mWidth*mHeight*getFormatSize(mGL_Format) > lWidth*lHeight*lFormatSize){
-            char formatSize = getFormatSize(mGL_Format);
-            pixels = new std::vector<uint8_t>(mHeight*mWidth*formatSize);
-           /* unsigned int px = mWidth*formatSize-lWidth*lFormatSize;
-            unsigned int py =*/
-            std::vector<uint8_t>* loaderPixels = loader.getPixels();
-            unsigned int maxValue = loader.getPixels()->size();
+        mWidth = (createInfo.flags & TEXTURE_FORCE_WIDTH) ? createInfo.width : width;
+        mHeight = (createInfo.flags & TEXTURE_FORCE_HEIGHT) ? createInfo.height : height;
+        mGL_Format = (createInfo.flags & TEXTURE_FORCE_FORMAT) ? createInfo.format : getFormatFromComponents(channels);
+
+        if(mWidth*mHeight*getComponentsFromFormat(mGL_Format) > width*height*channels){
+            char formatSize = getComponentsFromFormat(mGL_Format);
+            DEBUG_BLOCK(if(formatSize == -1){ std::cerr << "Image : invalid format." << std::endl; });
+            std::vector<uint8_t>* newPixels = new std::vector<uint8_t>(mHeight*mWidth*formatSize);
+            unsigned int maxValue = width*height*channels;
             for(unsigned int i(0); i < maxValue; i++){
-                (*pixels)[i] = (*loaderPixels)[i];
+                (*newPixels)[i] = c_pixels[i];
             }
-            for(unsigned int i(maxValue); i < pixels->size(); i++){
-                (*pixels)[i] = 255;
+            for(unsigned int i(maxValue); i < newPixels->size(); i++){
+                (*newPixels)[i] = 255;
             }
+            pixels = newPixels;
         }else{
-            pixels = loader.getPixels();
+            pixels = new std::vector<uint8_t>(c_pixels, c_pixels+width*height*channels);
         }
+        stbi_image_free(c_pixels);
     }
     mHasMipMaps = createInfo.genMipMaps;
 
@@ -67,7 +70,7 @@ OGL_Texture::OGL_Texture(const OGL_TextureCreateInfo &createInfo) : OGL_Object()
     glBindTexture(GL_TEXTURE_2D, 0);
 
     // On détruit les pixels si on les a creé
-    if(pixels != createInfo.pixels && pixels != loader.getPixels()){
+    if(pixels != createInfo.pixels){
         delete pixels;
     }
 
@@ -77,6 +80,7 @@ OGL_Texture::OGL_Texture(const OGL_TextureCreateInfo &createInfo) : OGL_Object()
         throw geException("Failed to load texture.");
     }
     LOG_OGL_LIFETIME(std::cerr, "OGL_Texture created.");
+    DEBUG_TEXTURE_INFO(std::cerr);
 }
 
 OGL_Texture::~OGL_Texture(void){
@@ -92,7 +96,7 @@ void OGL_Texture::destroy(void) {
     glDeleteTextures(1, &mGL_ID);
 }
 
-char OGL_Texture::getFormatSize(GLenum format) const{
+char OGL_Texture::getComponentsFromFormat(GLenum format) const{
     if(format == GL_RED || format == GL_DEPTH_COMPONENT)
         return 1;
     else if(format == GL_DEPTH_STENCIL || format == GL_RG)
@@ -101,7 +105,26 @@ char OGL_Texture::getFormatSize(GLenum format) const{
         return 3;
     else if(format == GL_RGBA || format == GL_BGRA)
         return 4;
-
     return -1;
+}
+
+GLenum OGL_Texture::getFormatFromComponents(unsigned int components) const{
+    switch(components){
+    case 1:
+        return GL_RED;
+        break;
+    case 2:
+        return GL_RG;
+        break;
+    case 3:
+        return GL_RGB;
+        break;
+    case 4:
+        return GL_RGBA;
+        break;
+    default:
+        return GL_INVALID_ENUM;
+        break;
+    }
 }
 

@@ -17,3 +17,7 @@ Version GLEW : 2.1.0	(gestion des extensions OpenGL)
 [09/11/2018]
 Création des éléments princpaux du moteur 3D.
 Ajout de la gestion des skybox.
+
+[10/11/2018]
+Suppression de la classe ImageLoader.
+Intégration de stb_image pour charger les images.

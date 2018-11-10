@@ -98,7 +98,7 @@ bool MainApplication::loadResources(void){
         unsigned int id;
         OGL_TextureCreateInfo texInfo = {};
         texInfo.fromFile_nFromBuffer = true;
-        texInfo.sourceFile = "Data/Textures/Skybox2.bmp";
+        texInfo.sourceFile = "Data/Textures/Skybox2.jpg";
        // texInfo.sourceFile = "Data/Textures/earth.bmp";
 
         texInfo.wrapS = GL_CLAMP_TO_EDGE;
@@ -126,6 +126,7 @@ bool MainApplication::loadResources(void){
     }
 
     mScene.sortTransparentObjects();
+    return true;
 }
 
 void MainApplication::clearContent(void){

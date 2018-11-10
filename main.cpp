@@ -12,7 +12,6 @@
 #define GLM_ENABLE_EXPERIMENTAL
 #include "glm/gtx/rotate_vector.hpp"
 #include "glm/gtc/constants.hpp"
-#include "ImageLoader.h"
 #include "OGL_Texture.h"
 #include "Mtl_Loader.h"
 #include "Scene.h"
