@@ -5,7 +5,7 @@
 		<Option title="Engine3DGEII_[C++]" />
 		<Option pch_mode="2" />
 		<Option compiler="gcc_730_x86" />
-		<Option virtualFolders="OGL_Object\;OGL_Object\OGL_Buffer\;OGL_Object\OGL_Shader\;OGL_Object\OGL_Texture\;Loaders\;SceneObjects\;Loaders\ImageLoader\;Loaders\Mtl_Loader\;Loaders\Obj_Loader\;" />
+		<Option virtualFolders="OGL_Object\;OGL_Object\OGL_Buffer\;OGL_Object\OGL_Shader\;OGL_Object\OGL_Texture\;Loaders\;SceneObjects\;Loaders\Mtl_Loader\;Loaders\Obj_Loader\;" />
 		<Build>
 			<Target title="Debug_x86">
 				<Option output="bin/Debug_x86/Engine3DGEII_[C++]" prefix_auto="1" extension_auto="1" />
@@ -69,12 +69,8 @@
 		<Unit filename="Debug_Preferences.h" />
 		<Unit filename="GL_ErrorHandler.cpp" />
 		<Unit filename="GL_ErrorHandler.h" />
-		<Unit filename="ImageLoader.cpp">
-			<Option virtualFolder="Loaders/ImageLoader/" />
-		</Unit>
-		<Unit filename="ImageLoader.h">
-			<Option virtualFolder="Loaders/ImageLoader/" />
-		</Unit>
+		<Unit filename="InputManager.cpp" />
+		<Unit filename="InputManager.h" />
 		<Unit filename="MainApplication.cpp" />
 		<Unit filename="MainApplication.h" />
 		<Unit filename="Material.cpp" />
@@ -137,9 +133,14 @@
 		<Unit filename="geTypes.h" />
 		<Unit filename="include/GL/eglew.h" />
 		<Unit filename="include/GL/glew.h" />
-		<Unit filename="include/GL/glut.h" />
 		<Unit filename="include/GL/glxew.h" />
 		<Unit filename="include/GL/wglew.h" />
+		<Unit filename="include/tiny_obj_loader/tiny_obj_loader.cc">
+			<Option virtualFolder="Loaders/Obj_Loader/" />
+		</Unit>
+		<Unit filename="include/tiny_obj_loader/tiny_obj_loader.h">
+			<Option virtualFolder="Loaders/Obj_Loader/" />
+		</Unit>
 		<Unit filename="main.cpp" />
 		<Extensions>
 			<code_completion />

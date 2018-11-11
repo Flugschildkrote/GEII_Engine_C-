@@ -6,6 +6,15 @@
 #include <string>
 #include <vector>
 
+#if defined(DEBUG) && defined(ENBABLE_LOG_TEXTURE_INFO)
+#define DEBUG_TEXTURE_INFO(stream) \
+    std::string name = (createInfo.fromFile_nFromBuffer ? createInfo.sourceFile : "From Buffers"); \
+    stream << "Loaded texture : \"" << name << "\"\nSize : " << mWidth << "x" << mHeight << "\nComponents : " << \
+    (int) getComponentsFromFormat(mGL_Format) << "\nMipmaps : " << (mHasMipMaps ? "True" : "False") << "\nGL_ID : " << mGL_ID << "\n\n";
+#else
+#define DEBUG_TEXTURE_INFO
+#endif // defined
+
 class OGL_Texture : public OGL_Object
 {
 public:

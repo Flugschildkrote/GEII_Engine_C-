@@ -6,13 +6,19 @@
 #include "GL_ErrorHandler.h"
 #include "Scene.h"
 #include "Object.h"
+#include "Scancodes.h"
 
-MainApplication::MainApplication(const std::string &appName, unsigned int w, unsigned int h) : mName(appName), mWidth(w), mHeight(h), mGLFWwindow(nullptr), mScene(10,10,10,10){
 
-}
+MainApplication::MainApplication(const std::string &appName, unsigned int w, unsigned int h) : mName(appName), mWidth(w), mHeight(h), mGLFWwindow(nullptr), mScene(10,10,10,10),
+mInputManager(KeyMode::SCANCODE) { }
 
 MainApplication::~MainApplication(void){
 
+}
+
+void MainApplication::clearContent(void){
+    mPhongRender.reset(nullptr);
+    mScene.freeAll();
 }
 
 bool MainApplication::setup(void){
@@ -21,25 +27,10 @@ bool MainApplication::setup(void){
         return false;
     }
     initGLStates();
+    initInput();
     loadResources();
+
     return true;
-}
-
-void MainApplication::run(void){
-    try{
-        if(!setup()){
-            return;
-        }
-
-        while(!glfwWindowShouldClose(mGLFWwindow)){
-            tick();
-            draw();
-            glfwPollEvents();
-        }
-    }catch(const geException &e){
-        std::cerr << e.what() << std::endl;
-    }
-    close();
 }
 
 bool MainApplication::initGL(void){
@@ -67,6 +58,7 @@ bool MainApplication::initGL(void){
     }
 
     glDebugMessageCallback(geErrorCallback, nullptr);
+    glfwSwapInterval(SWAP_INTERVAL);
     return true;
 }
 
@@ -75,6 +67,14 @@ bool MainApplication::initGLStates(){
     glDisable(GL_CULL_FACE);
     glViewport(0,0,mWidth,mHeight);
     return true;
+}
+
+void MainApplication::initInput(void){
+    glfwSetWindowUserPointer(mGLFWwindow, &mInputManager);
+    glfwSetKeyCallback(mGLFWwindow, InputManager::keyCallback);
+    glfwSetMouseButtonCallback(mGLFWwindow, InputManager::mouseButtonCallback);
+    glfwSetCursorPosCallback(mGLFWwindow, InputManager::mouseMovedCallback);
+    glfwSetWindowSizeCallback(mGLFWwindow, InputManager::windowResizedCallback);
 }
 
 bool MainApplication::loadResources(void){
@@ -129,11 +129,6 @@ bool MainApplication::loadResources(void){
     return true;
 }
 
-void MainApplication::clearContent(void){
-    mPhongRender.reset(nullptr);
-    mScene.freeAll();
-}
-
 void MainApplication::close(void){
     clearContent();
     DEBUG_LOG(std::cerr, "MainApplication:close(), content destroyed.");
@@ -143,6 +138,44 @@ void MainApplication::close(void){
 
     glfwTerminate();
     DEBUG_LOG(std::cerr, "MainApplication:close(), GLFW has terminated.");
+}
+
+void MainApplication::run(void){
+    try{
+        if(!setup()){
+            return;
+        }
+
+        while(!glfwWindowShouldClose(mGLFWwindow)){
+            processInput();
+            tick();
+            draw();
+            glfwPollEvents();
+        }
+    }catch(const geException &e){
+        std::cerr << e.what() << std::endl;
+    }
+    close();
+}
+
+void MainApplication::processInput(void){
+    if(mInputManager.getKey(GLFW_KEY_Q)){
+        std::cerr << "Key A pressed" << std::endl;
+
+    }
+
+    if(mInputManager.getKeyModifier(GLFW_MOD_ALT)){
+        std::cerr << "ALT ENABLED" << std::endl;
+    }
+
+    if(mInputManager.getFlagState(WIND0W_RESIZED_FLAG)){
+        glfwGetWindowSize(mGLFWwindow, reinterpret_cast<int*>(&mWidth), reinterpret_cast<int*>(&mHeight));
+        glViewport(0, 0, mWidth, mHeight);
+        mCamera.mXres = mWidth;
+        mCamera.mYres = mHeight;
+        mInputManager.resetFlags(WIND0W_RESIZED_FLAG);
+    }
+
 }
 
 void MainApplication::tick(void){
@@ -157,4 +190,3 @@ void MainApplication::draw(void){
     mPhongRender->draw(&mScene, &mCamera);
     glfwSwapBuffers(mGLFWwindow);
 }
-

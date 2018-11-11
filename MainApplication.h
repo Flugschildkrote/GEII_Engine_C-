@@ -5,6 +5,9 @@
 #include "GLFW/glfw3.h"
 #include "Scene.h"
 #include "Camera.h"
+#include "InputManager.h"
+
+#define SWAP_INTERVAL 0
 
 class MainApplication
 {
@@ -18,9 +21,11 @@ private:
     bool setup(void);
     bool initGL(void);
     bool initGLStates(void);
+    void initInput(void);
     bool loadResources(void);
     void clearContent(void);
     void close(void);
+    void processInput(void);
 
     void tick(void);
     void draw(void);
@@ -30,6 +35,7 @@ private:
     GLFWwindow* mGLFWwindow;
     Scene mScene;
     Camera mCamera;
+    InputManager mInputManager;
     std::unique_ptr<RenderPhong> mPhongRender;
     //std::unique_ptr<RenderPicking> mPickingRender;
 };

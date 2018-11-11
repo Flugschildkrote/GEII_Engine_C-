@@ -21,3 +21,6 @@ Ajout de la gestion des skybox.
 [10/11/2018]  
 Suppression de la classe ImageLoader.  
 Intégration de stb_image pour charger les images.  
+
+[11/11/2018]
+Ajout de la gestion des évenements (souris, clavier, redimmensionnement de la fenêtre)

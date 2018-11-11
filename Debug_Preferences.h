@@ -4,14 +4,8 @@
 ///##############[OBJ_LOADER]######################
 //#define DEBUG_OGL_OBJECT_LIFETIME
 #define ENBABLE_LOG_TEXTURE_INFO
-
-#if defined(DEBUG) && defined(ENBABLE_LOG_TEXTURE_INFO)
-#define DEBUG_TEXTURE_INFO(stream) \
-    std::string name = (createInfo.fromFile_nFromBuffer ? createInfo.sourceFile : "From Buffers"); \
-    stream << "Loaded texture : \"" << name << "\"\nSize : " << mWidth << "x" << mHeight << "\nComponents : " << \
-    (int) getComponentsFromFormat(mGL_Format) << "\nMipmaps : " << (mHasMipMaps ? "True" : "False") << "\nGL_ID : " << mGL_ID << "\n\n";
-#else
-#define DEBUG_TEXTURE_INFO
-#endif // defined
-
+#define ENABLE_DEBUG_KEY_INPUT
+#define ENABLE_DEBUG_MOUSE_BUTTON_INPUT
+#define ENABLE_DEBUG_MOUSE_MOVEMENT
+#define ENABLE_DEBUG_WINDOW_RESIZED
 #endif // DEBUG_PREFERENCES_H_INCLUDED
