@@ -6,6 +6,7 @@
 #include "Scene.h"
 #include "Camera.h"
 #include "InputManager.h"
+#include "RenderPicking.h"
 
 #define SWAP_INTERVAL 0
 
@@ -37,7 +38,7 @@ private:
     Camera mCamera;
     InputManager mInputManager;
     std::unique_ptr<RenderPhong> mPhongRender;
-    //std::unique_ptr<RenderPicking> mPickingRender;
+    std::unique_ptr<RenderPicking> mRenderPicking;
 };
 
 #endif // MAINAPPLICATION_H

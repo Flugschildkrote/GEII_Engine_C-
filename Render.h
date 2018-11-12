@@ -17,7 +17,7 @@ public:
 
     virtual void draw(Scene *scene, Camera* camera) const = 0;
 protected:
-    GLint getUniform(const std::string &uniformName, OGL_ShaderProgram* shader = nullptr) const;
+    GLint getUniform(const std::string &uniformName, OGL_ShaderProgram* shader) const;
     virtual void initUniforms(void) = 0;
     OGL_ShaderProgram_uptr mShaderProgram;
 };

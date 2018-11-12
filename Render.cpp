@@ -15,9 +15,6 @@ Render::Render(void) : mShaderProgram(nullptr){
 
 Render::~Render(void) { }
 GLint Render::getUniform(const std::string &uniformName, OGL_ShaderProgram* shader) const{
-    if(shader == nullptr){
-        shader = mShaderProgram.get();
-    }
     GLint result = shader->getUniformLocation(uniformName);
     if(result == GE_UNKNOWN_UNIFORM){
         throw geException("Failed to find uniform \""+uniformName+"\"");
@@ -59,29 +56,31 @@ RenderPhong::~RenderPhong() { }
 
 void RenderPhong::initUniforms(void){
     mShaderProgram->bind(true);
+    OGL_ShaderProgram *shader = mShaderProgram.get();
     /**[MATERIAL]**/
-    mU_MatKd = getUniform("color_Kd");
-    mU_MatKs = getUniform("color_Ks");
-    mU_MatNs = getUniform("color_Ns");
-    mU_MatAlpha = getUniform("color_Alpha");
-    mU_MatText = getUniform("texture_sampler");
-    mU_MatUseTexture = getUniform("useTexture");
+    mU_MatKd = getUniform("color_Kd", shader);
+    mU_MatKs = getUniform("color_Ks", shader);
+    mU_MatNs = getUniform("color_Ns", shader);
+    mU_MatAlpha = getUniform("color_Alpha", shader);
+    mU_MatText = getUniform("texture_sampler", shader);
+    mU_MatUseTexture = getUniform("useTexture", shader);
 
     /**[LIGHT]**/
-    mU_LightPos = getUniform("lightPos");
-    mU_LightPower= getUniform("lightIntensity");
-    mU_LightAmbiant = getUniform("lightColor");
+    mU_LightPos = getUniform("lightPos", shader);
+    mU_LightPower= getUniform("lightIntensity", shader);
+    mU_LightAmbiant = getUniform("lightColor", shader);
 
     /**[MODEL]**/
-    mU_ModelMatrix = getUniform("model_matrix");
+    mU_ModelMatrix = getUniform("model_matrix", shader);
 
     /**[CAMERA]**/
-    mU_MVP = getUniform("mvp");
-    mU_WorldEyePos = getUniform("worldeye_pos");
+    mU_MVP = getUniform("mvp", shader);
+    mU_WorldEyePos = getUniform("worldeye_pos", shader);
 
     mSkyboxShader->bind(true);
-    mU_Sky_MVP = getUniform("mvp", mSkyboxShader.get());
-    mU_Sky_Texture = getUniform("texture_sampler", mSkyboxShader.get());
+    shader = mSkyboxShader.get();
+    mU_Sky_MVP = getUniform("mvp", shader);
+    mU_Sky_Texture = getUniform("texture_sampler", shader);
     mSkyboxShader->bind(false);
 }
 
@@ -109,7 +108,6 @@ void RenderPhong::draw(Scene *scene, Camera *camera) const{
             skybox->setEnabled(false);
         }
     }
-
 
     mShaderProgram->bind(true);
 

@@ -5,7 +5,7 @@
 		<Option title="Engine3DGEII_[C++]" />
 		<Option pch_mode="2" />
 		<Option compiler="gcc_730_x86" />
-		<Option virtualFolders="OGL_Object\;OGL_Object\OGL_Buffer\;OGL_Object\OGL_Shader\;OGL_Object\OGL_Texture\;Loaders\;SceneObjects\;Loaders\Mtl_Loader\;Loaders\Obj_Loader\;" />
+		<Option virtualFolders="OGL_Object\;OGL_Object\OGL_Buffer\;OGL_Object\OGL_Shader\;OGL_Object\OGL_Texture\;Loaders\;SceneObjects\;Loaders\Mtl_Loader\;Loaders\Obj_Loader\;Renders\;" />
 		<Build>
 			<Target title="Debug_x86">
 				<Option output="bin/Debug_x86/Engine3DGEII_[C++]" prefix_auto="1" extension_auto="1" />
@@ -113,8 +113,18 @@
 		</Unit>
 		<Unit filename="Object.cpp" />
 		<Unit filename="Object.h" />
-		<Unit filename="Render.cpp" />
-		<Unit filename="Render.h" />
+		<Unit filename="Render.cpp">
+			<Option virtualFolder="Renders/" />
+		</Unit>
+		<Unit filename="Render.h">
+			<Option virtualFolder="Renders/" />
+		</Unit>
+		<Unit filename="RenderPicking.cpp">
+			<Option virtualFolder="Renders/" />
+		</Unit>
+		<Unit filename="RenderPicking.h">
+			<Option virtualFolder="Renders/" />
+		</Unit>
 		<Unit filename="Scene.cpp" />
 		<Unit filename="Scene.h" />
 		<Unit filename="SceneObject.cpp">

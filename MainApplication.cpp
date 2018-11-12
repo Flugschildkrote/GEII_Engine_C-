@@ -81,6 +81,7 @@ bool MainApplication::loadResources(void){
 
     { //##########[CREATION DU RENDER]##########
         mPhongRender = std::make_unique<RenderPhong>();
+        mRenderPicking = std::make_unique<RenderPicking>();
     }
 
     // Chargement d'un fichier obj dans la scene
@@ -168,6 +169,22 @@ void MainApplication::processInput(void){
         std::cerr << "ALT ENABLED" << std::endl;
     }
 
+    if(mInputManager.getFlagState(MOUSE_BUTTON_CLICKED_FLAG)){
+        if(mInputManager.getMouseButtonClicked(GLFW_MOUSE_BUTTON_1)){
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+            mRenderPicking->draw(&mScene, &mCamera);
+            PickingID_t id = mRenderPicking->getClickedObject(mInputManager.getMouseX(), mHeight-mInputManager.getMouseY());
+
+            if(id == RENDER_PICKING_SKYBOX)
+                std::cerr << "Clicked on the Skybox" << std::endl;
+            else{
+                mScene.getObject(id)->setEnabled(false);
+            }
+        }
+        mInputManager.resetFlags(MOUSE_BUTTON_CLICKED_FLAG);
+    }
+
+
     if(mInputManager.getFlagState(WIND0W_RESIZED_FLAG)){
         glfwGetWindowSize(mGLFWwindow, reinterpret_cast<int*>(&mWidth), reinterpret_cast<int*>(&mHeight));
         glViewport(0, 0, mWidth, mHeight);
@@ -175,17 +192,15 @@ void MainApplication::processInput(void){
         mCamera.mYres = mHeight;
         mInputManager.resetFlags(WIND0W_RESIZED_FLAG);
     }
-
 }
 
 void MainApplication::tick(void){
-    mPhongRender->update(&mCamera);
     mCamera.right(0.032f);
+    mPhongRender->update(&mCamera);
     mScene.getSkybox()->resetTransform(mCamera.mPos);
 }
 
 void MainApplication::draw(void){
-
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     mPhongRender->draw(&mScene, &mCamera);
     glfwSwapBuffers(mGLFWwindow);

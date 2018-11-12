@@ -9,6 +9,7 @@
 #define CHECK_OBJECT(error_shape, error_material)
 #endif // DEBUG
 
+
 class Object{
 public:
     Object(const ObjectCreateInfo &info);
@@ -18,13 +19,16 @@ public:
     inline Shape_sptr getShape(void) const { return mShape; }
     inline glm::mat4 getTransformations(void) const { return mTransformations; }
     inline bool isEnabled(void) const { return mIsEnabled; }
+  //  inline PickingID_t getPickingID(void) const { return mPickingID; }
 
     void setEnabled(bool state);
+  //  void setPickingID(const PickingID_t &id);
     void resetTransform(const glm::vec3 &pos);
 protected:
     Material_sptr mMaterial;
     Shape_sptr mShape;
     glm::mat4 mTransformations;
+  //  PickingID_t mPickingID;
     bool mIsEnabled;
 };
 

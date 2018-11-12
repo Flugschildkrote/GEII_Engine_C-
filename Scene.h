@@ -23,6 +23,7 @@ public:
     Material_sptr getMaterial(unsigned int index) const;
     Texture_sptr getTexture(unsigned int index) const;
     Object_sptr getObject(unsigned int index) const;
+    Object_sptr getByPickingID(const PickingID_t &id) const;
     Object_sptr getSkybox(void) const;
 
     unsigned int getShapesCount(void) const;

@@ -100,6 +100,8 @@ using OGL_Buffer_wptr = std::weak_ptr<OGL_Buffer>;
 ///--------------------------------------------------
 ///---------------[OBJECT]-----------------------
 ///--------------------------------------------------
+using PickingID_t = uint32_t;
+
 class Object;
 using Object_uptr = std::unique_ptr<Object>;
 using Object_sptr = std::shared_ptr<Object>;
