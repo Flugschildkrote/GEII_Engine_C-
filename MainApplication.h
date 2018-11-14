@@ -10,6 +10,8 @@
 
 #define SWAP_INTERVAL 0
 
+class OGL_FrameBuffer;
+
 class MainApplication
 {
 public:
@@ -30,7 +32,6 @@ private:
 
     void tick(void);
     void draw(void);
-
     std::string mName;
     unsigned int mWidth, mHeight;
     GLFWwindow* mGLFWwindow;
@@ -39,6 +40,7 @@ private:
     InputManager mInputManager;
     std::unique_ptr<RenderPhong> mPhongRender;
     std::unique_ptr<RenderPicking> mRenderPicking;
+    std::unique_ptr<OGL_FrameBuffer> mFrameBuffer;
 };
 
 #endif // MAINAPPLICATION_H

@@ -28,3 +28,7 @@ Ajout de la gestion des évenements (souris, clavier, redimmensionnement de la f
 [12/11/2018]  
 Ajout de fonctionnalités à InputManager  
 Ajout du Picking  
+  
+[14/11/2018]  
+Ajout de la gestion des textures vides  
+Implémentation des Frame Buffer Object  

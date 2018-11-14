@@ -34,7 +34,7 @@ protected:
     Light mLight;
 /**************[UNIFORMS]***************************************/
     /**[MATERIAL]**/
-    GLint mU_MatKd, mU_MatKs, mU_MatNs, mU_MatAlpha, mU_MatText, mU_MatUseTexture;
+    GLint mU_MatKd, mU_MatKs, mU_MatNs, mU_MatAlpha, mU_MatText, mU_MatUseTexture, mU_MatLightSensitive;
     /**[LIGHT]**/
     GLint mU_LightPos, mU_LightPower, mU_LightAmbiant;
     /**[MODEL]**/

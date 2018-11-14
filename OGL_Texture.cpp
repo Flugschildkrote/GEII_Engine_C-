@@ -10,13 +10,14 @@
 
 OGL_Texture::OGL_Texture(const OGL_TextureCreateInfo &createInfo) : OGL_Object(), mWidth(0), mHeight(0), mGL_Format(GL_INVALID_ENUM), mGL_InternalFormat(GL_INVALID_ENUM), mHasMipMaps(false){
     glGenTextures(1, &mGL_ID);
-    std::vector<uint8_t> *pixels = nullptr;
+    unsigned char *pixels = nullptr;
+    bool fromPicture = false;
 
     if(!createInfo.fromFile_nFromBuffer){
         mHeight = createInfo.height;
         mWidth = createInfo.width;
         mGL_Format = createInfo.format;
-        pixels = createInfo.pixels;
+        pixels = createInfo.data;
     }else{
         int width, height, channels;
         stbi_set_flip_vertically_on_load(true);
@@ -29,19 +30,21 @@ OGL_Texture::OGL_Texture(const OGL_TextureCreateInfo &createInfo) : OGL_Object()
         if(mWidth*mHeight*getComponentsFromFormat(mGL_Format) > width*height*channels){
             char formatSize = getComponentsFromFormat(mGL_Format);
             DEBUG_BLOCK(if(formatSize == -1){ std::cerr << "Image : invalid format." << std::endl; });
-            std::vector<uint8_t>* newPixels = new std::vector<uint8_t>(mHeight*mWidth*formatSize);
+            int newPixelsSize = mHeight*mWidth*formatSize;
+            unsigned char *newPixels = new unsigned char[newPixelsSize];
             unsigned int maxValue = width*height*channels;
             for(unsigned int i(0); i < maxValue; i++){
-                (*newPixels)[i] = c_pixels[i];
+                newPixels[i] = c_pixels[i];
             }
-            for(unsigned int i(maxValue); i < newPixels->size(); i++){
-                (*newPixels)[i] = 255;
+            for(unsigned int i(maxValue); i < newPixelsSize; i++){
+                newPixels[i] = 255;
             }
             pixels = newPixels;
+            stbi_image_free(c_pixels);
         }else{
-            pixels = new std::vector<uint8_t>(c_pixels, c_pixels+width*height*channels);
+            fromPicture = true;
+            pixels = c_pixels;
         }
-        stbi_image_free(c_pixels);
     }
     mHasMipMaps = createInfo.genMipMaps;
 
@@ -64,14 +67,18 @@ OGL_Texture::OGL_Texture(const OGL_TextureCreateInfo &createInfo) : OGL_Object()
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, createInfo.magFilter);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, createInfo.wrapS);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, createInfo.wrapT);
-        glTexImage2D(GL_TEXTURE_2D, 0, mGL_InternalFormat, mWidth, mHeight, 0, mGL_Format, GL_UNSIGNED_BYTE, pixels->data());
+        glTexImage2D(GL_TEXTURE_2D, 0, mGL_InternalFormat, mWidth, mHeight, 0, mGL_Format, GL_UNSIGNED_BYTE, pixels);
         if(mHasMipMaps)
             glGenerateMipmap(GL_TEXTURE_2D);
     glBindTexture(GL_TEXTURE_2D, 0);
 
     // On détruit les pixels si on les a creé
-    if(pixels != createInfo.pixels){
-        delete pixels;
+    if(pixels != createInfo.data){
+        if(fromPicture){
+            stbi_image_free(pixels);
+        }else{
+            delete[] pixels;
+        }
     }
 
     // Vérifie si texture OK

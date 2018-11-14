@@ -7,6 +7,8 @@
 #include "Scene.h"
 #include "Object.h"
 #include "Scancodes.h"
+#include "OGL_FrameBuffer.h"
+#include "OGL_Texture.h"
 
 
 MainApplication::MainApplication(const std::string &appName, unsigned int w, unsigned int h) : mName(appName), mWidth(w), mHeight(h), mGLFWwindow(nullptr), mScene(10,10,10,10),
@@ -18,6 +20,9 @@ MainApplication::~MainApplication(void){
 
 void MainApplication::clearContent(void){
     mPhongRender.reset(nullptr);
+    mRenderPicking.reset(nullptr);
+    mFrameBuffer.reset(nullptr);
+
     mScene.freeAll();
 }
 
@@ -92,8 +97,8 @@ bool MainApplication::loadResources(void){
     mCamera.mType = CAMERA_TYPE_PERSPECTIVE;
     mCamera.mXres = mWidth;
     mCamera.mYres = mHeight;
-    mCamera.mZFar = 200.0f;
-    mCamera.mZNear = 0.01f;
+    mCamera.mZFar = 100.0f;
+    mCamera.mZNear = 0.1f;
 
     { // Skybox
         unsigned int id;
@@ -124,6 +129,55 @@ bool MainApplication::loadResources(void){
         skyboxInfo.shape = skyboxShape;
         Object_sptr skyboxObject = mScene.getNewObject(skyboxInfo, &id);
         mScene.setSkybox(skyboxObject);
+    }
+
+     { // Frame Buffer
+        unsigned char pixels[12] = { 255, 255,255, 255, 0, 255, 0, 255, 255, 255, 0, 255};
+        unsigned int id;
+        OGL_TextureCreateInfo texInfo = {};
+        texInfo.fromFile_nFromBuffer = false;
+        texInfo.sourceFile = "Data/Textures/earth_1024.bmp";
+        texInfo.genMipMaps = false;
+        texInfo.width = 512;
+        texInfo.height = 512;
+        texInfo.format = GL_RGB;
+        Texture_sptr colorTexture = mScene.getNewTexture(texInfo, &id);
+
+        AttachmentData attachmentData = {};
+        attachmentData.attachment = GL_COLOR_ATTACHMENT0;
+        attachmentData.textureID = colorTexture->getID();
+
+        FrameBuffer_CreateInfo frameBufferInfo = {};
+        //frameBufferInfo.flags = FRAMEBUFFER_DISABLE_READ | FRAMEBUFFER_DISABLE_WRITE;
+        frameBufferInfo.attachments.push_back(attachmentData);
+
+        texInfo.format = GL_DEPTH_COMPONENT;
+        Texture_sptr depthTexture = mScene.getNewTexture(texInfo, &id);
+        attachmentData.attachment = GL_DEPTH_ATTACHMENT;
+        attachmentData.textureID = depthTexture->getID();
+        frameBufferInfo.attachments.push_back(attachmentData);
+        frameBufferInfo.width = 512;
+        frameBufferInfo.height = 512;
+
+        mFrameBuffer = std::make_unique<OGL_FrameBuffer>(frameBufferInfo);
+
+        MaterialCreateInfo matInfo = {};
+        matInfo.texture = colorTexture;
+        matInfo.lightSensitive = false;
+        Material_sptr objectMaterial = mScene.getNewMaterial(matInfo, &id);
+
+        ShapeCreateInfo shapeInfo = {};
+        shapeInfo.sourceType = ShapeSource::SQUARE;
+        shapeInfo.half_x = 2.0f;
+        shapeInfo.half_y = 2.0f;
+        shapeInfo.half_z = 1.0f;
+        Shape_wptr objectShape = mScene.getNewShape(shapeInfo, &id);
+
+        ObjectCreateInfo objectInfo = {};
+        objectInfo.material = objectMaterial;
+        objectInfo.shape = objectShape;
+        Object_sptr object = mScene.getNewObject(objectInfo, &id);
+        object->resetTransform(glm::vec3(6,0,0));
     }
 
     mScene.sortTransparentObjects();
@@ -202,6 +256,19 @@ void MainApplication::tick(void){
 
 void MainApplication::draw(void){
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    mFrameBuffer->bind(true);
+        glClearColor(1.0f, 0.0f, 1.0f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        glViewport(0, 0, mFrameBuffer->getWidth(), mFrameBuffer->getHeight());
+        mCamera.mXres = mFrameBuffer->getWidth();
+        mCamera.mYres = mFrameBuffer->getHeight();
+
+        mPhongRender->draw(&mScene, &mCamera);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glViewport(0, 0, mWidth, mHeight);
+    mCamera.mXres = mWidth;
+    mCamera.mYres = mHeight;
     mPhongRender->draw(&mScene, &mCamera);
     glfwSwapBuffers(mGLFWwindow);
 }

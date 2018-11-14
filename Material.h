@@ -18,6 +18,7 @@ public:
     glm::vec3 mSpecularColor_Ks;
     float mSpecularExponent_Ns;
     float mTransparency_Alpha;
+    bool mLightSensitive;
     Texture_sptr mTexture;
 };
 

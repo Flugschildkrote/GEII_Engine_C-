@@ -64,6 +64,7 @@ void RenderPhong::initUniforms(void){
     mU_MatAlpha = getUniform("color_Alpha", shader);
     mU_MatText = getUniform("texture_sampler", shader);
     mU_MatUseTexture = getUniform("useTexture", shader);
+    mU_MatLightSensitive = getUniform("lightSensitive", shader);
 
     /**[LIGHT]**/
     mU_LightPos = getUniform("lightPos", shader);
@@ -149,6 +150,7 @@ void RenderPhong::draw(Scene *scene, Camera *camera) const{
         mShaderProgram->setUniform(mU_MatKd, material->mAmbiantColor_Kd);
         mShaderProgram->setUniform(mU_MatKs, material->mSpecularColor_Ks);
         mShaderProgram->setUniform(mU_MatNs, material->mSpecularExponent_Ns);
+        mShaderProgram->setUniform(mU_MatLightSensitive, material->mLightSensitive);
 
         Texture_sptr texture = material->mTexture;
         if(texture){

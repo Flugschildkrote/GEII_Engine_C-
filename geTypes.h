@@ -67,7 +67,7 @@ struct OGL_TextureCreateInfo{
     GLenum wrapT = GL_REPEAT;
     GLenum magFilter = GL_NEAREST;
     GLenum minFilter = GL_NEAREST;
-    std::vector<uint8_t> *pixels = nullptr;
+    unsigned char *data = nullptr;
     bool genMipMaps = false;
 };
 ///--------------------------------------------------
@@ -84,6 +84,7 @@ struct MaterialCreateInfo{
     glm::vec3 specularColor_Ks = glm::vec3(0,0,0);
     float specularExponent_Ns = 1.0;
     float transparency_Alpha = 1.0f;
+    bool lightSensitive = true;
     Texture_sptr texture = nullptr;
 };
 ///--------------------------------------------------
