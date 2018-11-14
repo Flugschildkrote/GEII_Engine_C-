@@ -26,10 +26,8 @@ GLint Render::getUniform(const std::string &uniformName, OGL_ShaderProgram* shad
 
 /**************[RENDER_PHONG]***************************************/
 RenderPhong::RenderPhong(void) : Render(){
-    mLight.ambiantColor = glm::vec3(0.5f, 0.5f, 0.5f);
-    mLight.position = glm::vec3(0.0f, 0.0f, -20.0f);
-    mLight.power = glm::vec3(1.0f, 1.0f, 1.0f);
 
+   // mShadowMappingRender = std::make_unique<RenderShadowMapping>();
     // Standard draw shader
     ShaderCreateInfo vertexInfo = {};
     vertexInfo.fromFile_nFromMemory = true;
@@ -67,7 +65,9 @@ void RenderPhong::initUniforms(void){
     mU_MatLightSensitive = getUniform("lightSensitive", shader);
 
     /**[LIGHT]**/
-    mU_LightPos = getUniform("lightPos", shader);
+    mU_ShadowMap = getUniform("shadowMap", shader);
+    mU_LightMatrix = getUniform("light_matrix", shader);
+    mU_LightDir = getUniform("lightDir", shader);
     mU_LightPower= getUniform("lightIntensity", shader);
     mU_LightAmbiant = getUniform("lightColor", shader);
 
@@ -85,12 +85,9 @@ void RenderPhong::initUniforms(void){
     mSkyboxShader->bind(false);
 }
 
-void RenderPhong::update(Camera *camera){
-    mLight.position = camera->mPos;
-}
-
-void RenderPhong::draw(Scene *scene, Camera *camera) const{
+void RenderPhong::draw(Scene *scene, Camera *camera, Light* light, Texture_sptr shadowMap) const{
     bool skyboxSaveState = false;
+///#########################[RENDU DE LA SKYBOX]############################################
     if(scene->hasSkybox()){
         Object_sptr skybox = scene->getSkybox();
         skyboxSaveState =  skybox->isEnabled();
@@ -110,12 +107,17 @@ void RenderPhong::draw(Scene *scene, Camera *camera) const{
         }
     }
 
+///#########################[RENDU DE LA SCENE]################################################
     mShaderProgram->bind(true);
 
+    // Définition de la shadowMap
+    mShaderProgram->setUniformTexture(mU_ShadowMap, 1); // Shadow map sur la texture n1
+    glActiveTexture(GL_TEXTURE1);
+    shadowMap->bind(true);
     /**[LIGHT**/
-    mShaderProgram->setUniform(mU_LightPos,     mLight.position);
-    mShaderProgram->setUniform(mU_LightPower,   mLight.power);
-    mShaderProgram->setUniform(mU_LightAmbiant, mLight.ambiantColor);
+    mShaderProgram->setUniform(mU_LightDir,     light->dir);
+    mShaderProgram->setUniform(mU_LightPower,   light->power);
+    mShaderProgram->setUniform(mU_LightAmbiant, light->ambiantColor);
 
 //Le point de vue
     mShaderProgram->setUniform(mU_WorldEyePos, glm::normalize(camera->getLookDir()));
@@ -137,10 +139,12 @@ void RenderPhong::draw(Scene *scene, Camera *camera) const{
             continue;
         }
         //Fixe la matrice mvp
-        glm::mat4 mvp, modelMatrix;
+        glm::mat4 mvp, modelMatrix, lightMatrix;
         modelMatrix = object->getTransformations();
         mvp = camera->getProjectionMatrix()*camera->getViewMatrix()*modelMatrix;
+        lightMatrix = LIGHT_PROJECTION*glm::lookAt(light->position,light->position+light->dir, glm::vec3(0.0f, 1.0f, 0.0f))*modelMatrix;
 
+        mShaderProgram->setUniform(mU_LightMatrix, lightMatrix);
         mShaderProgram->setUniform(mU_ModelMatrix, modelMatrix);
         mShaderProgram->setUniform(mU_MVP, mvp);
 
@@ -209,4 +213,64 @@ void RenderPhong::draw(Scene *scene, Camera *camera) const{
 
     mShaderProgram->bind(false);
 
+}
+
+RenderShadowMapping::RenderShadowMapping(void) : Render(){
+    ShaderCreateInfo vertexInfo = {};
+    vertexInfo.fromFile_nFromMemory = true;
+    vertexInfo.sourceFile = "Data/Shaders/ShadowMapping.vert";
+
+    ShaderCreateInfo fragInfo = {};
+    fragInfo.fromFile_nFromMemory = true;
+    fragInfo.sourceFile = "Data/Shaders/ShadowMapping.frag";
+
+    OGL_ShaderProgramCreateInfo shaderInfo = {};
+    shaderInfo.fragInfo = &fragInfo;
+    shaderInfo.vertInfo = &vertexInfo;
+
+
+    mShaderProgram = std::make_unique<OGL_ShaderProgram>(shaderInfo);
+    initUniforms();
+}
+
+RenderShadowMapping::~RenderShadowMapping(void){ }
+
+void RenderShadowMapping::draw(Scene* scene, Light *light){
+    bool skyboxSaveState = false;
+    if(scene->hasSkybox()){
+        Object_sptr skybox = scene->getSkybox();
+        skyboxSaveState =  skybox->isEnabled();
+        skybox->setEnabled(false);
+    }
+
+    mShaderProgram->bind(true);
+
+    int nbprim=scene->getObjectsCount();
+
+    for(unsigned int i(0); i < nbprim; i++){
+        Object_sptr object = scene->getObject(i);
+        if(!object->isEnabled()){
+            continue;
+        }
+        glm::mat4 mvp, modelMatrix;
+        modelMatrix = object->getTransformations();
+        glm::mat4 proj = LIGHT_PROJECTION;
+        glm::mat4 view = glm::lookAt(light->position , light->position+light->dir, glm::vec3(0.0f, 1.0f, 0.0f));
+        mvp = proj*view*modelMatrix;
+        mShaderProgram->setUniform(mU_MVP, mvp);
+        object->getShape()->draw();
+    }
+
+    // Si la skybox était activée on la réactive
+    if(skyboxSaveState){
+        scene->getSkybox()->setEnabled(true);
+    }
+
+    mShaderProgram->bind(false);
+}
+
+void RenderShadowMapping::initUniforms(void){
+    mShaderProgram->bind(true);
+        mU_MVP = getUniform("mvp", mShaderProgram.get());
+    mShaderProgram->bind(false);
 }

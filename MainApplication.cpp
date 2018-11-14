@@ -12,7 +12,7 @@
 
 
 MainApplication::MainApplication(const std::string &appName, unsigned int w, unsigned int h) : mName(appName), mWidth(w), mHeight(h), mGLFWwindow(nullptr), mScene(10,10,10,10),
-mInputManager(KeyMode::SCANCODE) { }
+mInputManager(KeyMode::KEYCODE) { }
 
 MainApplication::~MainApplication(void){
 
@@ -84,13 +84,21 @@ void MainApplication::initInput(void){
 
 bool MainApplication::loadResources(void){
 
+    mLight.ambiantColor = glm::vec3(0.5f, 0.5f, 0.5f);
+    mLight.position = glm::vec3(10.0f, 10.0f, 10.0f);
+    mLight.power = glm::vec3(1.0f, 1.0f, 1.0f);
+    mLight.dir = glm::vec3(-1.0f, -1.0f, -1.0f);
+
     { //##########[CREATION DU RENDER]##########
         mPhongRender = std::make_unique<RenderPhong>();
         mRenderPicking = std::make_unique<RenderPicking>();
+        mShadowMapping = std::make_unique<RenderShadowMapping>();
     }
 
     // Chargement d'un fichier obj dans la scene
-    Obj_Loader myObjLoader("Data/citroen_ds3/Citroen_DS3.obj", &mScene);
+   // Obj_Loader myObjLoader("Data/citroen_ds3/Citroen_DS3.obj", &mScene);
+    Obj_Loader myObjLoader("Data/Test_Obj/ShadowTest/ShadowTest.obj", &mScene);
+
 
     mCamera.mPos = glm::vec3(0,8,15);
     mCamera.mLookPos = glm::vec3(0.0f, 0.0f, 0.0f);
@@ -138,8 +146,8 @@ bool MainApplication::loadResources(void){
         texInfo.fromFile_nFromBuffer = false;
         texInfo.sourceFile = "Data/Textures/earth_1024.bmp";
         texInfo.genMipMaps = false;
-        texInfo.width = 512;
-        texInfo.height = 512;
+        texInfo.width = 1024;
+        texInfo.height = 1024;
         texInfo.format = GL_RGB;
         Texture_sptr colorTexture = mScene.getNewTexture(texInfo, &id);
 
@@ -148,21 +156,25 @@ bool MainApplication::loadResources(void){
         attachmentData.textureID = colorTexture->getID();
 
         FrameBuffer_CreateInfo frameBufferInfo = {};
-        //frameBufferInfo.flags = FRAMEBUFFER_DISABLE_READ | FRAMEBUFFER_DISABLE_WRITE;
-        frameBufferInfo.attachments.push_back(attachmentData);
+        frameBufferInfo.flags = FRAMEBUFFER_DISABLE_READ | FRAMEBUFFER_DISABLE_WRITE;
+       // frameBufferInfo.attachments.push_back(attachmentData);
 
         texInfo.format = GL_DEPTH_COMPONENT;
+        texInfo.pixelType = GL_FLOAT;
         Texture_sptr depthTexture = mScene.getNewTexture(texInfo, &id);
         attachmentData.attachment = GL_DEPTH_ATTACHMENT;
         attachmentData.textureID = depthTexture->getID();
         frameBufferInfo.attachments.push_back(attachmentData);
-        frameBufferInfo.width = 512;
-        frameBufferInfo.height = 512;
+        frameBufferInfo.width = 1024;
+        frameBufferInfo.height = 1024;
+
+        mShadowMap = depthTexture;
+
 
         mFrameBuffer = std::make_unique<OGL_FrameBuffer>(frameBufferInfo);
 
         MaterialCreateInfo matInfo = {};
-        matInfo.texture = colorTexture;
+        matInfo.texture = depthTexture;
         matInfo.lightSensitive = false;
         Material_sptr objectMaterial = mScene.getNewMaterial(matInfo, &id);
 
@@ -238,6 +250,42 @@ void MainApplication::processInput(void){
         mInputManager.resetFlags(MOUSE_BUTTON_CLICKED_FLAG);
     }
 
+    bool ctrl = mInputManager.getKeyModifier(GLFW_MOD_CONTROL);
+
+    float cameraSpeed = 0.02f;
+    float lightSpeed = 0.005f;
+    if(mInputManager.getKey(GLFW_KEY_RIGHT)){
+        if(!ctrl){
+            mCamera.right(cameraSpeed);
+        }else{
+            mLight.position = glm::vec4(glm::rotate(glm::mat4(1.0f), lightSpeed, glm::vec3(0.0f, 1.0f, 0.0f))*glm::vec4(mLight.position, 1.0f));
+            mLight.dir = glm::vec4(glm::rotate(glm::mat4(1.0f), lightSpeed, glm::vec3(0.0f, 1.0f, 0.0f))*glm::vec4(mLight.dir, 0.0f));
+        }
+    }
+    if(mInputManager.getKey(GLFW_KEY_LEFT)){
+        if(!ctrl){
+            mCamera.left(cameraSpeed);
+        }else{
+            mLight.position = glm::vec4(glm::rotate(glm::mat4(1.0f), -lightSpeed, glm::vec3(0.0f, 1.0f, 0.0f))*glm::vec4(mLight.position, 1.0f));
+            mLight.dir = glm::vec4(glm::rotate(glm::mat4(1.0f), -lightSpeed, glm::vec3(0.0f, 1.0f, 0.0f))*glm::vec4(mLight.dir, 0.0f));
+        }
+    }
+    if(mInputManager.getKey(GLFW_KEY_UP)){
+        if(!ctrl){
+            mCamera.forward(cameraSpeed);
+        }else{
+            mLight.position = glm::vec4(glm::rotate(glm::mat4(1.0f), -lightSpeed, glm::cross(mLight.dir,glm::vec3(0.0f, 1.0f, 0.0f)))*glm::vec4(mLight.position, 1.0f));
+            mLight.dir = glm::vec4(glm::rotate(glm::mat4(1.0f), -lightSpeed, glm::cross(mLight.dir,glm::vec3(0.0f, 1.0f, 0.0f)))*glm::vec4(mLight.dir, 0.0f));
+        }
+    }
+    if(mInputManager.getKey(GLFW_KEY_DOWN)){
+        if(!ctrl){
+            mCamera.backward(cameraSpeed);
+        }else{
+            mLight.position = glm::vec4(glm::rotate(glm::mat4(1.0f), lightSpeed, glm::cross(mLight.dir,glm::vec3(0.0f, 1.0f, 0.0f)))*glm::vec4(mLight.position, 1.0f));
+            mLight.dir = glm::vec4(glm::rotate(glm::mat4(1.0f), lightSpeed, glm::cross(mLight.dir,glm::vec3(0.0f, 1.0f, 0.0f)))*glm::vec4(mLight.dir, 0.0f));
+        }
+    }
 
     if(mInputManager.getFlagState(WIND0W_RESIZED_FLAG)){
         glfwGetWindowSize(mGLFWwindow, reinterpret_cast<int*>(&mWidth), reinterpret_cast<int*>(&mHeight));
@@ -249,8 +297,8 @@ void MainApplication::processInput(void){
 }
 
 void MainApplication::tick(void){
-    mCamera.right(0.032f);
-    mPhongRender->update(&mCamera);
+   // mCamera.right(0.032f);
+   // mPhongRender->update(&mCamera);
     mScene.getSkybox()->resetTransform(mCamera.mPos);
 }
 
@@ -264,11 +312,11 @@ void MainApplication::draw(void){
         mCamera.mXres = mFrameBuffer->getWidth();
         mCamera.mYres = mFrameBuffer->getHeight();
 
-        mPhongRender->draw(&mScene, &mCamera);
+        mShadowMapping->draw(&mScene, &mLight);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glViewport(0, 0, mWidth, mHeight);
     mCamera.mXres = mWidth;
     mCamera.mYres = mHeight;
-    mPhongRender->draw(&mScene, &mCamera);
+    mPhongRender->draw(&mScene, &mCamera, &mLight, mShadowMap);
     glfwSwapBuffers(mGLFWwindow);
 }

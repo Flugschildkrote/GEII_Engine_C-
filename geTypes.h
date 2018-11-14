@@ -67,6 +67,7 @@ struct OGL_TextureCreateInfo{
     GLenum wrapT = GL_REPEAT;
     GLenum magFilter = GL_NEAREST;
     GLenum minFilter = GL_NEAREST;
+    GLenum pixelType = GL_UNSIGNED_BYTE;
     unsigned char *data = nullptr;
     bool genMipMaps = false;
 };

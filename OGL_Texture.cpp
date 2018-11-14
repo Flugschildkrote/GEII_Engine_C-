@@ -67,7 +67,7 @@ OGL_Texture::OGL_Texture(const OGL_TextureCreateInfo &createInfo) : OGL_Object()
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, createInfo.magFilter);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, createInfo.wrapS);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, createInfo.wrapT);
-        glTexImage2D(GL_TEXTURE_2D, 0, mGL_InternalFormat, mWidth, mHeight, 0, mGL_Format, GL_UNSIGNED_BYTE, pixels);
+        glTexImage2D(GL_TEXTURE_2D, 0, mGL_InternalFormat, mWidth, mHeight, 0, mGL_Format, createInfo.pixelType, pixels);
         if(mHasMipMaps)
             glGenerateMipmap(GL_TEXTURE_2D);
     glBindTexture(GL_TEXTURE_2D, 0);

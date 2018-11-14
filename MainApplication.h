@@ -40,7 +40,10 @@ private:
     InputManager mInputManager;
     std::unique_ptr<RenderPhong> mPhongRender;
     std::unique_ptr<RenderPicking> mRenderPicking;
+    std::unique_ptr<RenderShadowMapping> mShadowMapping;
     std::unique_ptr<OGL_FrameBuffer> mFrameBuffer;
+    Light mLight;
+    Texture_sptr mShadowMap;
 };
 
 #endif // MAINAPPLICATION_H
