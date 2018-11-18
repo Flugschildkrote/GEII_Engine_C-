@@ -20,6 +20,16 @@ Obj_Loader::~Obj_Loader(){
     //dtor
 }
 
+void Obj_Loader::clearData(void){
+    mMtlLoader.clearData();
+    mCurrentLib.reset();
+    mVertice.clear();
+    mNormals.clear();
+    mUVs.clear();
+    mFaces.clear();
+    mComputeNormals = false;
+}
+
 void Obj_Loader::loadFile(const std::string &file, Scene *scene){
     std::ifstream inputStream(file);
     if(!inputStream.is_open()){
@@ -149,8 +159,7 @@ void Obj_Loader::loadFile(const std::string &file, Scene *scene){
         }
         stream >> cmd;
      }
-     mCurrentLib.reset();
-     mMtlLoader.clearData();
+     clearData();
 }
 
 void Obj_Loader::cmd_f(std::stringstream &stream){    //Lecture des valeurs

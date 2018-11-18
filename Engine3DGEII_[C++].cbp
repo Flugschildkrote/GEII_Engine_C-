@@ -87,8 +87,12 @@
 		<Unit filename="OGL_Buffer.h">
 			<Option virtualFolder="OGL_Object/OGL_Buffer/" />
 		</Unit>
-		<Unit filename="OGL_FrameBuffer.cpp" />
-		<Unit filename="OGL_FrameBuffer.h" />
+		<Unit filename="OGL_FrameBuffer.cpp">
+			<Option virtualFolder="OGL_Object/OGL_FrameBuffer/" />
+		</Unit>
+		<Unit filename="OGL_FrameBuffer.h">
+			<Option virtualFolder="OGL_Object/OGL_FrameBuffer/" />
+		</Unit>
 		<Unit filename="OGL_Object.cpp">
 			<Option virtualFolder="OGL_Object/" />
 		</Unit>
@@ -137,16 +141,14 @@
 		</Unit>
 		<Unit filename="Shape.cpp" />
 		<Unit filename="Shape.h" />
+		<Unit filename="Transform.cpp" />
+		<Unit filename="Transform.h" />
 		<Unit filename="geException.h" />
 		<Unit filename="geHeader.h">
 			<Option compile="1" />
 			<Option weight="0" />
 		</Unit>
 		<Unit filename="geTypes.h" />
-		<Unit filename="include/GL/eglew.h" />
-		<Unit filename="include/GL/glew.h" />
-		<Unit filename="include/GL/glxew.h" />
-		<Unit filename="include/GL/wglew.h" />
 		<Unit filename="include/tiny_obj_loader/tiny_obj_loader.cc">
 			<Option virtualFolder="Loaders/Obj_Loader/" />
 		</Unit>

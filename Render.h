@@ -2,6 +2,7 @@
 #define RENDER_H
 
 #include "geHeader.h"
+#include "Transform.h"
 #define GE_UNKNOWN_UNIFORM -1
 
 #define LIGHT_PROJECTION glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, 0.1f, 200.0f)
@@ -10,8 +11,7 @@ class RenderShadowMapping;
 struct Light{
     glm::vec3 ambiantColor;
     glm::vec3 power;
-    glm::vec3 position;
-    glm::vec3 dir;
+    Transform_sptr transform = std::make_shared<Transform>();
 };
 
 class Render{

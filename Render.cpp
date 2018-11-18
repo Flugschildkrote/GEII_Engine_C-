@@ -93,7 +93,7 @@ void RenderPhong::draw(Scene *scene, Camera *camera, Light* light, Texture_sptr 
         skyboxSaveState =  skybox->isEnabled();
         if(skyboxSaveState){
             mSkyboxShader->bind(true);
-            glm::mat4 mvp = camera->getProjectionMatrix()*camera->getViewMatrix()*skybox->getTransformations();
+            glm::mat4 mvp = camera->getProjectionMatrix()*camera->getViewMatrix()*skybox->getTransform()->getTransformations();
 
             mSkyboxShader->setUniform(mU_Sky_MVP, mvp);
             mSkyboxShader->setUniformTexture(mU_Sky_Texture, 0);
@@ -115,12 +115,12 @@ void RenderPhong::draw(Scene *scene, Camera *camera, Light* light, Texture_sptr 
     glActiveTexture(GL_TEXTURE1);
     shadowMap->bind(true);
     /**[LIGHT**/
-    mShaderProgram->setUniform(mU_LightDir,     light->dir);
+    mShaderProgram->setUniform(mU_LightDir,     light->transform->getWorldAxis(AXIS_FRONT));
     mShaderProgram->setUniform(mU_LightPower,   light->power);
     mShaderProgram->setUniform(mU_LightAmbiant, light->ambiantColor);
 
 //Le point de vue
-    mShaderProgram->setUniform(mU_WorldEyePos, glm::normalize(camera->getLookDir()));
+    mShaderProgram->setUniform(mU_WorldEyePos, glm::normalize(camera->mTransform->getWorldAxis(AXIS_FRONT)));
 //Fixe l'unitee de texture
     mShaderProgram->setUniformTexture(mU_MatText, 0);
     glActiveTexture(GL_TEXTURE0);
@@ -140,9 +140,9 @@ void RenderPhong::draw(Scene *scene, Camera *camera, Light* light, Texture_sptr 
         }
         //Fixe la matrice mvp
         glm::mat4 mvp, modelMatrix, lightMatrix;
-        modelMatrix = object->getTransformations();
+        modelMatrix = object->getTransform()->getTransformations();
         mvp = camera->getProjectionMatrix()*camera->getViewMatrix()*modelMatrix;
-        lightMatrix = LIGHT_PROJECTION*glm::lookAt(light->position,light->position+light->dir, glm::vec3(0.0f, 1.0f, 0.0f))*modelMatrix;
+        lightMatrix = LIGHT_PROJECTION*glm::lookAt(light->transform->getPosition(),light->transform->getPosition()+light->transform->getWorldAxis(AXIS_FRONT), light->transform->getWorldAxis(AXIS_UP))*modelMatrix;
 
         mShaderProgram->setUniform(mU_LightMatrix, lightMatrix);
         mShaderProgram->setUniform(mU_ModelMatrix, modelMatrix);
@@ -179,7 +179,7 @@ void RenderPhong::draw(Scene *scene, Camera *camera, Light* light, Texture_sptr 
         }
         //Fixe la matrice mvp
         glm::mat4 mvp, modelMatrix;
-        modelMatrix = object->getTransformations();
+        modelMatrix = object->getTransform()->getTransformations();
         mvp = camera->getProjectionMatrix()*camera->getViewMatrix()*modelMatrix;
         mShaderProgram->setUniform(mU_ModelMatrix, modelMatrix);
         mShaderProgram->setUniform(mU_MVP, mvp);
@@ -247,15 +247,16 @@ void RenderShadowMapping::draw(Scene* scene, Light *light){
 
     int nbprim=scene->getObjectsCount();
 
-    for(unsigned int i(0); i < nbprim; i++){
+    for(int i(0); i < nbprim; i++){
         Object_sptr object = scene->getObject(i);
         if(!object->isEnabled()){
             continue;
         }
         glm::mat4 mvp, modelMatrix;
-        modelMatrix = object->getTransformations();
+        modelMatrix = object->getTransform()->getTransformations();
         glm::mat4 proj = LIGHT_PROJECTION;
-        glm::mat4 view = glm::lookAt(light->position , light->position+light->dir, glm::vec3(0.0f, 1.0f, 0.0f));
+        glm::mat4 view = glm::lookAt(light->transform->getPosition(),light->transform->getPosition()+light->transform->getWorldAxis(AXIS_FRONT), light->transform->getWorldAxis(AXIS_UP));
+
         mvp = proj*view*modelMatrix;
         mShaderProgram->setUniform(mU_MVP, mvp);
         object->getShape()->draw();

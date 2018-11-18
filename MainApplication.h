@@ -7,6 +7,7 @@
 #include "Camera.h"
 #include "InputManager.h"
 #include "RenderPicking.h"
+#include "Transform.h"
 
 #define SWAP_INTERVAL 0
 
@@ -44,6 +45,9 @@ private:
     std::unique_ptr<OGL_FrameBuffer> mFrameBuffer;
     Light mLight;
     Texture_sptr mShadowMap;
+
+    Object_sptr mConeObject;
+    Transform_sptr mTransform;
 };
 
 #endif // MAINAPPLICATION_H

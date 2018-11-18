@@ -10,7 +10,6 @@
 #include "OGL_FrameBuffer.h"
 #include "OGL_Texture.h"
 
-
 MainApplication::MainApplication(const std::string &appName, unsigned int w, unsigned int h) : mName(appName), mWidth(w), mHeight(h), mGLFWwindow(nullptr), mScene(10,10,10,10),
 mInputManager(KeyMode::KEYCODE) { }
 
@@ -85,9 +84,13 @@ void MainApplication::initInput(void){
 bool MainApplication::loadResources(void){
 
     mLight.ambiantColor = glm::vec3(0.5f, 0.5f, 0.5f);
-    mLight.position = glm::vec3(10.0f, 10.0f, 10.0f);
+   // mLight.position = glm::vec3(10.0f, 10.0f, 10.0f);
     mLight.power = glm::vec3(1.0f, 1.0f, 1.0f);
-    mLight.dir = glm::vec3(-1.0f, -1.0f, -1.0f);
+    mLight.transform->translate(glm::vec3(10.0f, 10.0f, 10.0f));
+    mLight.transform->rotate(glm::radians(45.0f), AXIS_UP, SpaceReference::LOCAL);
+    mLight.transform->rotate(glm::radians(-45.0f), AXIS_RIGHT, SpaceReference::LOCAL);
+
+   // mLight.dir = glm::vec3(-1.0f, -1.0f, -1.0f);
 
     { //##########[CREATION DU RENDER]##########
         mPhongRender = std::make_unique<RenderPhong>();
@@ -97,11 +100,17 @@ bool MainApplication::loadResources(void){
 
     // Chargement d'un fichier obj dans la scene
    // Obj_Loader myObjLoader("Data/citroen_ds3/Citroen_DS3.obj", &mScene);
+   // Obj_Loader myObjLoader("Data/Test_Obj/cat/cat.obj", &mScene);
+    //myObjLoader.loadFile("Data/Test_Obj/cat/cat.obj", &mScene);
+
     Obj_Loader myObjLoader("Data/Test_Obj/ShadowTest/ShadowTest.obj", &mScene);
+    myObjLoader.loadFile("Data/Test_Obj/cat/cat.obj", &mScene);
+    mConeObject = mScene.getObject(1);
+    mTransform = mConeObject->getTransform();
 
 
-    mCamera.mPos = glm::vec3(0,8,15);
-    mCamera.mLookPos = glm::vec3(0.0f, 0.0f, 0.0f);
+   // mCamera.mPos = glm::vec3(0,8,15);
+    //mCamera.mLookPos = glm::vec3(0.0f, 0.0f, 0.0f);
     mCamera.mType = CAMERA_TYPE_PERSPECTIVE;
     mCamera.mXres = mWidth;
     mCamera.mYres = mHeight;
@@ -140,15 +149,17 @@ bool MainApplication::loadResources(void){
     }
 
      { // Frame Buffer
-        unsigned char pixels[12] = { 255, 255,255, 255, 0, 255, 0, 255, 255, 255, 0, 255};
         unsigned int id;
+        int fboSize = 2048;
         OGL_TextureCreateInfo texInfo = {};
         texInfo.fromFile_nFromBuffer = false;
         texInfo.sourceFile = "Data/Textures/earth_1024.bmp";
         texInfo.genMipMaps = false;
-        texInfo.width = 1024;
-        texInfo.height = 1024;
+        texInfo.width = fboSize;
+        texInfo.height = fboSize;
         texInfo.format = GL_RGB;
+        texInfo.wrapS = GL_CLAMP_TO_BORDER;
+        texInfo.wrapT = GL_CLAMP_TO_BORDER;
         Texture_sptr colorTexture = mScene.getNewTexture(texInfo, &id);
 
         AttachmentData attachmentData = {};
@@ -165,14 +176,15 @@ bool MainApplication::loadResources(void){
         attachmentData.attachment = GL_DEPTH_ATTACHMENT;
         attachmentData.textureID = depthTexture->getID();
         frameBufferInfo.attachments.push_back(attachmentData);
-        frameBufferInfo.width = 1024;
-        frameBufferInfo.height = 1024;
+        frameBufferInfo.width = fboSize;
+        frameBufferInfo.height = fboSize;
 
         mShadowMap = depthTexture;
 
 
         mFrameBuffer = std::make_unique<OGL_FrameBuffer>(frameBufferInfo);
 
+        /** Carré pour afficher la texture de profondeur **/
         MaterialCreateInfo matInfo = {};
         matInfo.texture = depthTexture;
         matInfo.lightSensitive = false;
@@ -189,8 +201,34 @@ bool MainApplication::loadResources(void){
         objectInfo.material = objectMaterial;
         objectInfo.shape = objectShape;
         Object_sptr object = mScene.getNewObject(objectInfo, &id);
-        object->resetTransform(glm::vec3(6,0,0));
+        object->getTransform()->rotate(glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+        object->getTransform()->translate(glm::vec3(-4.999, 2.0f, 0), SpaceReference::WORLD);
     }
+
+    mCamera.mTransform->translate(glm::vec3(0.0f, 10.0f, -10.0f));
+
+
+  /*  ShapeCreateInfo shapeInfo = {};
+    unsigned int id;
+    shapeInfo.height = 2.0f;
+    shapeInfo.radius = 1.0f;
+    shapeInfo.slice = 50;
+    shapeInfo.stack = 50;
+    shapeInfo.half_x = 0.5f;
+    shapeInfo.half_y = 0.5f;
+    shapeInfo.half_z = 0.5f;
+    shapeInfo.sourceType = ShapeSource::BOX;
+    Shape_sptr coneShape = mScene.getNewShape(shapeInfo, &id);
+
+    MaterialCreateInfo matInfo = {};
+    matInfo.ambiantColor_Kd = glm::vec3(1.0f, 0.0f, 1.0f);
+    Material_sptr material = mScene.getNewMaterial(matInfo, &id);
+
+    ObjectCreateInfo objectInfo = {};
+    objectInfo.material = material;
+    objectInfo.shape = coneShape;
+    mConeObject = mScene.getNewObject(objectInfo, &id);*/
+   // mTransform.setTracking(true);
 
     mScene.sortTransparentObjects();
     return true;
@@ -226,14 +264,6 @@ void MainApplication::run(void){
 }
 
 void MainApplication::processInput(void){
-    if(mInputManager.getKey(GLFW_KEY_Q)){
-        std::cerr << "Key A pressed" << std::endl;
-
-    }
-
-    if(mInputManager.getKeyModifier(GLFW_MOD_ALT)){
-        std::cerr << "ALT ENABLED" << std::endl;
-    }
 
     if(mInputManager.getFlagState(MOUSE_BUTTON_CLICKED_FLAG)){
         if(mInputManager.getMouseButtonClicked(GLFW_MOUSE_BUTTON_1)){
@@ -250,40 +280,59 @@ void MainApplication::processInput(void){
         mInputManager.resetFlags(MOUSE_BUTTON_CLICKED_FLAG);
     }
 
-    bool ctrl = mInputManager.getKeyModifier(GLFW_MOD_CONTROL);
+    float cameraRotSpeed = 0.005f;
+    if(mInputManager.getFlagState(MOUSE_MOVED_FLAG)){
+        mCamera.mTransform->rotate((float)-mInputManager.getMouseMoveY()*cameraRotSpeed, AXIS_RIGHT);
+        mCamera.mTransform->rotate((float)-mInputManager.getMouseMoveX()*cameraRotSpeed, AXIS_UP, SpaceReference::WORLD);
 
+        mInputManager.resetFlags(MOUSE_MOVED_FLAG);
+    }
+
+    bool ctrl = mInputManager.getKeyModifier(GLFW_MOD_CONTROL);
+    bool alt = mInputManager.getKeyModifier(GLFW_MOD_ALT);
     float cameraSpeed = 0.02f;
     float lightSpeed = 0.005f;
+    if(mInputManager.getKey(GLFW_KEY_1)){
+        glfwSetInputMode(mGLFWwindow, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    }if(mInputManager.getKey(GLFW_KEY_2)){
+        glfwSetInputMode(mGLFWwindow, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+    }
+
     if(mInputManager.getKey(GLFW_KEY_RIGHT)){
         if(!ctrl){
-            mCamera.right(cameraSpeed);
+            mCamera.mTransform->translate(AXIS_RIGHT*cameraSpeed);
         }else{
-            mLight.position = glm::vec4(glm::rotate(glm::mat4(1.0f), lightSpeed, glm::vec3(0.0f, 1.0f, 0.0f))*glm::vec4(mLight.position, 1.0f));
-            mLight.dir = glm::vec4(glm::rotate(glm::mat4(1.0f), lightSpeed, glm::vec3(0.0f, 1.0f, 0.0f))*glm::vec4(mLight.dir, 0.0f));
+            mLight.transform->setTransformations(glm::rotate(glm::mat4(1.0f), -lightSpeed, glm::vec3(0.0f, 1.0f, 0.0f))*mLight.transform->getTransformations());
+           // mLight.position = glm::vec4(glm::rotate(glm::mat4(1.0f), lightSpeed, glm::vec3(0.0f, 1.0f, 0.0f))*glm::vec4(mLight.position, 1.0f));
+           // mLight.dir = glm::vec4(glm::rotate(glm::mat4(1.0f), lightSpeed, glm::vec3(0.0f, 1.0f, 0.0f))*glm::vec4(mLight.dir, 0.0f));
         }
     }
     if(mInputManager.getKey(GLFW_KEY_LEFT)){
         if(!ctrl){
-            mCamera.left(cameraSpeed);
+            mCamera.mTransform->translate(AXIS_LEFT*cameraSpeed);
         }else{
-            mLight.position = glm::vec4(glm::rotate(glm::mat4(1.0f), -lightSpeed, glm::vec3(0.0f, 1.0f, 0.0f))*glm::vec4(mLight.position, 1.0f));
-            mLight.dir = glm::vec4(glm::rotate(glm::mat4(1.0f), -lightSpeed, glm::vec3(0.0f, 1.0f, 0.0f))*glm::vec4(mLight.dir, 0.0f));
+            mLight.transform->setTransformations(glm::rotate(glm::mat4(1.0f), lightSpeed, glm::vec3(0.0f, 1.0f, 0.0f))*mLight.transform->getTransformations());
+//            mLight.position = glm::vec4(glm::rotate(glm::mat4(1.0f), -lightSpeed, glm::vec3(0.0f, 1.0f, 0.0f))*glm::vec4(mLight.position, 1.0f));
+        //    mLight.dir = glm::vec4(glm::rotate(glm::mat4(1.0f), -lightSpeed, glm::vec3(0.0f, 1.0f, 0.0f))*glm::vec4(mLight.dir, 0.0f));
         }
     }
     if(mInputManager.getKey(GLFW_KEY_UP)){
         if(!ctrl){
-            mCamera.forward(cameraSpeed);
+            mCamera.mTransform->translate(AXIS_FRONT*cameraSpeed);
         }else{
-            mLight.position = glm::vec4(glm::rotate(glm::mat4(1.0f), -lightSpeed, glm::cross(mLight.dir,glm::vec3(0.0f, 1.0f, 0.0f)))*glm::vec4(mLight.position, 1.0f));
-            mLight.dir = glm::vec4(glm::rotate(glm::mat4(1.0f), -lightSpeed, glm::cross(mLight.dir,glm::vec3(0.0f, 1.0f, 0.0f)))*glm::vec4(mLight.dir, 0.0f));
+            mLight.transform->setTransformations(glm::rotate(glm::mat4(1.0f), -lightSpeed, mLight.transform->getWorldAxis(AXIS_RIGHT))*mLight.transform->getTransformations());
+
+//            mLight.position = glm::vec4(glm::rotate(glm::mat4(1.0f), -lightSpeed, glm::cross(mLight.dir,glm::vec3(0.0f, 1.0f, 0.0f)))*glm::vec4(mLight.position, 1.0f));
+       //    mLight.dir = glm::vec4(glm::rotate(glm::mat4(1.0f), -lightSpeed, glm::cross(mLight.dir,glm::vec3(0.0f, 1.0f, 0.0f)))*glm::vec4(mLight.dir, 0.0f));
         }
     }
     if(mInputManager.getKey(GLFW_KEY_DOWN)){
         if(!ctrl){
-            mCamera.backward(cameraSpeed);
+            mCamera.mTransform->translate(AXIS_BACK*cameraSpeed);
         }else{
-            mLight.position = glm::vec4(glm::rotate(glm::mat4(1.0f), lightSpeed, glm::cross(mLight.dir,glm::vec3(0.0f, 1.0f, 0.0f)))*glm::vec4(mLight.position, 1.0f));
-            mLight.dir = glm::vec4(glm::rotate(glm::mat4(1.0f), lightSpeed, glm::cross(mLight.dir,glm::vec3(0.0f, 1.0f, 0.0f)))*glm::vec4(mLight.dir, 0.0f));
+            mLight.transform->setTransformations(glm::rotate(glm::mat4(1.0f), lightSpeed, mLight.transform->getWorldAxis(AXIS_RIGHT))*mLight.transform->getTransformations());
+          //  mLight.position = glm::vec4(glm::rotate(glm::mat4(1.0f), lightSpeed, glm::cross(mLight.dir,glm::vec3(0.0f, 1.0f, 0.0f)))*glm::vec4(mLight.position, 1.0f));
+         //   mLight.dir = glm::vec4(glm::rotate(glm::mat4(1.0f), lightSpeed, glm::cross(mLight.dir,glm::vec3(0.0f, 1.0f, 0.0f)))*glm::vec4(mLight.dir, 0.0f));
         }
     }
 
@@ -294,12 +343,41 @@ void MainApplication::processInput(void){
         mCamera.mYres = mHeight;
         mInputManager.resetFlags(WIND0W_RESIZED_FLAG);
     }
+
+    float moveSpeed = 0.02f;
+    float rotSpeed = 0.005f;
+
+    SpaceReference spaceReference = SpaceReference::LOCAL;
+    if(alt){ spaceReference = SpaceReference::WORLD; }
+    // UP
+    if(mInputManager.getKey(GLFW_KEY_KP_ADD)){
+        if(!ctrl){ mTransform->translate(glm::vec3(0.0f, moveSpeed, 0.0f), spaceReference); }
+        else{ mTransform->rotate(rotSpeed, glm::vec3(0.0f, 1.0f, 0.0f), spaceReference); }
+    //DOWN
+    }if(mInputManager.getKey(GLFW_KEY_KP_SUBTRACT)){
+        if(!ctrl){  mTransform->translate(glm::vec3(0.0f, -moveSpeed, 0.0f), spaceReference); }
+        else{ mTransform->rotate(-rotSpeed, glm::vec3(0.0f, 1.0f, 0.0f), spaceReference); }
+    }
+    if(mInputManager.getKey(GLFW_KEY_KP_4)){
+        if(!ctrl){ mTransform->translate(glm::vec3(-moveSpeed,0.0f, 0.0f), spaceReference); }
+        else{ mTransform->rotate(-rotSpeed, glm::vec3(1.0f, 0.0f, 0.0f), spaceReference); }
+    }
+    if(mInputManager.getKey(GLFW_KEY_KP_6)){
+        if(!ctrl){ mTransform->translate(glm::vec3(moveSpeed, 0.0f, 0.0f), spaceReference); }
+        else{ mTransform->rotate(rotSpeed, glm::vec3(1.0f, 0.0f, 0.0f), spaceReference); }
+    }
+    if(mInputManager.getKey(GLFW_KEY_KP_8)){
+        if(!ctrl){ mTransform->translate(AXIS_FRONT*moveSpeed, spaceReference); }
+        else{ mTransform->rotate(rotSpeed, glm::vec3(0.0f, 0.0f, 1.0f), spaceReference); }
+    }
+    if(mInputManager.getKey(GLFW_KEY_KP_5)){
+        if(!ctrl){ mTransform->translate(AXIS_BACK*moveSpeed, spaceReference);
+        }else{ mTransform->rotate(-rotSpeed, glm::vec3(0.0f, 0.0f, 1.0f), spaceReference); }
+    }
 }
 
 void MainApplication::tick(void){
-   // mCamera.right(0.032f);
-   // mPhongRender->update(&mCamera);
-    mScene.getSkybox()->resetTransform(mCamera.mPos);
+    mScene.getSkybox()->getTransform()->setPosition(mCamera.mTransform->getPosition());
 }
 
 void MainApplication::draw(void){

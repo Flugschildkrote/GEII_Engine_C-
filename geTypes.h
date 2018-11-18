@@ -53,7 +53,8 @@ enum TextureFlag : uint8_t{
     TEXTURE_FORCE_HEIGHT          = 0b0000'0010,
     TEXTURE_FORCE_SIZE            = 0b0000'0011,
     TEXTURE_FORCE_FORMAT          = 0b0000'0100,
-    TEXTURE_FORCE_INTERNAL_FORMAT = 0b0000'1000
+    TEXTURE_FORCE_INTERNAL_FORMAT = 0b0000'1000,
+   // TEXTURE_USE_BORDER_COLOR      = 0b0001'0000
 };
 struct OGL_TextureCreateInfo{
     bool fromFile_nFromBuffer = false;
@@ -68,6 +69,7 @@ struct OGL_TextureCreateInfo{
     GLenum magFilter = GL_NEAREST;
     GLenum minFilter = GL_NEAREST;
     GLenum pixelType = GL_UNSIGNED_BYTE;
+    glm::vec4 borderColor = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
     unsigned char *data = nullptr;
     bool genMipMaps = false;
 };

@@ -2,6 +2,7 @@
 #define CAMERA_H
 
 #include "geHeader.h"
+#include "Transform.h"
 
 enum CameraType : uint8_t{
     CAMERA_TYPE_ORTHOGRAPHIC = 0,
@@ -17,20 +18,21 @@ public:
     CameraType mType;
     float mFov, mZNear, mZFar;
     unsigned int mXres, mYres;
-    glm::vec3 mPos, mLookPos, mUpAxis;
+    Transform_sptr mTransform;
+   // glm::vec3 mPos, mLookPos, mUpAxis;
 
     glm::mat4 getProjectionMatrix(void) const;
     glm::mat4 getViewMatrix(void) const;
     float getRatio(void) const;
 
-    void forward(float dist);
+  /*  void forward(float dist);
     void backward(float dist);
     void up(float dist);
     void down(float dist);
     void left(float dist);
-    void right(float dist);
+    void right(float dist);*/
 
-    glm::vec3 getLookDir(void) const;
+    //glm::vec3 getLookDir(void) const;
 protected:
 };
 

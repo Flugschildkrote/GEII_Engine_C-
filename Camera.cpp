@@ -2,7 +2,7 @@
 
 
 Camera::Camera(void) : mType(CAMERA_TYPE_PERSPECTIVE), mFov(70.0f), mZNear(0.1f), mZFar(10.0f), mXres(1.0f), mYres(1.0f),
- mPos(0.0f,0.0f,0.0f), mLookPos(0.0f,1.0f,0.0f), mUpAxis(0.0f,1.0f,0.0f){
+ /*mPos(0.0f,0.0f,0.0f), mLookPos(0.0f,1.0f,0.0f), mUpAxis(0.0f,1.0f,0.0f)*/ mTransform(std::make_shared<Transform>()){
     //ctor
 }
 
@@ -24,12 +24,17 @@ glm::mat4 Camera::getProjectionMatrix(void) const {
 }
 
 glm::mat4 Camera::getViewMatrix(void) const {
-    return glm::lookAt(mPos, mLookPos, mUpAxis);
+    glm::vec3 pos, lookDir, upAxis;
+    pos = mTransform->getPosition();
+    lookDir = mTransform->getWorldAxis(AXIS_FRONT);
+    upAxis = mTransform->getWorldAxis(AXIS_UP);
+
+    return glm::lookAt(pos, pos+lookDir, upAxis);
 }
 
 float Camera::getRatio(void) const { return static_cast<float>(mXres)/static_cast<float>(mYres); }
 
-void Camera::forward(float dist){
+/*void Camera::forward(float dist){
     mPos += getLookDir()*dist;
 }
 
@@ -53,5 +58,5 @@ void Camera::right(float dist){
     mPos += glm::cross(getLookDir(), mUpAxis)*dist;
 }
 
-glm::vec3 Camera::getLookDir(void) const { return glm::normalize(mLookPos-mPos); }
+glm::vec3 Camera::getLookDir(void) const { return glm::normalize(mLookPos-mPos); }*/
 

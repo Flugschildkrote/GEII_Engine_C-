@@ -13,6 +13,29 @@ Version GLEW : 2.1.0	(gestion des extensions OpenGL)
 /////////////////////////////////////////////////////////////////////////  
 /////////////////////////////////////////////////////////////////////////  
 /////////////////////////////////////////////////////////////////////////  
+   
+Commandes :  
+  
+[CAMERA]  
+Déplacer la caméra : Flèches directionnelles  
+Tourner la caméra : Déplacer la souris  
+  
+[LUMIERE]  
+Faire tourner la lumière : CTRL+Flèches directionnelles  
+  
+[OBJETS]  
+Cacher un objet : Clic sur l'objet  
+Déplacement du chat (axes locaux) : Numpad(4, 5, 6, 8, +, -)  
+Déplacement du chat (axes globaux) : CRTL+Numpad(4, 5, 6, 8, +, -)  
+Rotation du chat (axes locaux) : ALT+Numpad(4, 5, 6, 8, +, -)  
+Rotation du chat (axes globaux) : ALT+CRTL+Numpad(4, 5, 6, 8, +, -)  
+  
+[CURSEUR]  
+Vérouiller le curseur : 1  
+Dévérouiller le curseur : 2  
+/////////////////////////////////////////////////////////////////////////  
+/////////////////////////////////////////////////////////////////////////  
+/////////////////////////////////////////////////////////////////////////  
 
 [09/11/2018]  
 Création des éléments princpaux du moteur 3D.  
@@ -35,3 +58,6 @@ Implémentation des Frame Buffer Object
   
 [15/11/2018]  
 Implémentation d'un système de Shadow Mapping  
+  
+[18/11/2018]  
+Ajout de la classe Transform pour gérer tous les déplacements  

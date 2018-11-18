@@ -5,8 +5,7 @@
 #include "Camera.h"
 #include "OGL_Shader.h"
 
-RenderPicking::RenderPicking(void)
-{
+RenderPicking::RenderPicking(void){
     ShaderCreateInfo vertexInfo = {};
     vertexInfo.fromFile_nFromMemory = true;
     vertexInfo.sourceFile = "Data/Shaders/Picking.vert";
@@ -35,7 +34,7 @@ void RenderPicking::draw(Scene* scene, Camera* camera) const {
     if(scene->hasSkybox()){
         Object_sptr skybox = scene->getSkybox();
         skyboxSaveState = skybox->isEnabled();
-        glm::mat4 mvp = camera->getProjectionMatrix()*camera->getViewMatrix()*skybox->getTransformations();
+        glm::mat4 mvp = camera->getProjectionMatrix()*camera->getViewMatrix()*skybox->getTransform()->getTransformations();
 
         mShaderProgram->setUniform(mU_mvp, mvp);
         mShaderProgram->setUniform(mU_colorPicking, RENDER_PICKING_SKYBOX_COLOR);
@@ -54,7 +53,7 @@ void RenderPicking::draw(Scene* scene, Camera* camera) const {
         }
 
         glm::mat4 mvp;
-        mvp = camera->getProjectionMatrix()*camera->getViewMatrix()*object->getTransformations();
+        mvp = camera->getProjectionMatrix()*camera->getViewMatrix()*object->getTransform()->getTransformations();
 
         uint8_t rouge = (i & 0x0000FF) ;
         uint8_t vert = (i & 0x00FF00) >> 8;

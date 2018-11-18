@@ -88,6 +88,7 @@ public:
     static void windowResizedCallback(GLFWwindow* window, int width, int height);
 
     bool getKey(int key) const { return mKeys[key]; }
+    bool getKeyClicked(int key)const { return mClickedKeys[key]; }
     bool getKeyModifier(int mod) const { return static_cast<bool>(mKeyModifiers & mod); }
     bool getMouseButton(int button) const { return mMouseButtons[button]; }
     bool getMouseButtonClicked(int button) const { return mClickedMouseButtons[button]; }
