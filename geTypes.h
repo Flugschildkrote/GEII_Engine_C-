@@ -139,4 +139,17 @@ class Camera;
 
 class Render;
 class RenderPhong;
+
+class Transform;
+using Transform_sptr = std::shared_ptr<Transform>;
+using Transform_wptr = std::weak_ptr<Transform>;
+using Transform_uptr = std::unique_ptr<Transform>;
+
+enum LightType{
+    LIGHT_SUN = 0,
+    LIGHT_SPOT = 1
+};
+
+struct Light;
+using Light_sptr = std::shared_ptr<Light>;
 #endif // GETYPES_H_INCLUDED

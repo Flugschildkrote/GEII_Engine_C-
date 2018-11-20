@@ -1,5 +1,9 @@
 #version 330 core
     
+#define LIGHT_SUN 0
+#define LIGHT_SPOT 1
+#define MAX_LIGHTS 2
+
 layout(location = 0) out vec4 out_Color;
 
 uniform vec3 color_Kd;
@@ -10,24 +14,33 @@ uniform sampler2D texture_sampler;
 uniform bool useTexture;
 uniform bool lightSensitive;
    
-uniform vec3 lightDir;
-uniform vec3 lightIntensity;
-uniform vec3 lightColor;
+struct Light{
+	vec3 dir;
+	vec3 intensity;
+	vec3 color;
+	int type;
+	float angle;
+	sampler2D shadowMap;
+};
+
+uniform Light lights[MAX_LIGHTS];
+uniform int lightCount;
+uniform mat4 light_matrix[MAX_LIGHTS];
+
 
 uniform vec3 worldeye_pos;
-
-uniform sampler2D shadowMap;
 
 in vec2 textCoords;
 in vec3 worldPos;
 in vec3 sh_normal;
-in vec4 pos_LightSpace;
+in vec3 vertPos;
 
+vec4 pos_LightSpace[MAX_LIGHTS];
 
-float ShadowCalculation(vec4 fragPosLightSpace)
+float ShadowCalculation(float bias, int lightIndex)
 {
     // perform perspective divide
-    vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
+    vec3 projCoords = pos_LightSpace[lightIndex].xyz / pos_LightSpace[lightIndex].w;
     // transform to [0,1] range
     projCoords = projCoords * 0.5 + 0.5;
     // get depth of current fragment from light's perspective
@@ -35,11 +48,11 @@ float ShadowCalculation(vec4 fragPosLightSpace)
     // check whether current frag pos is in shadow
     float shadow = 0.0f;
 	// Pour adoucir l'ombre, on fait la moyenne des pixels envirronants
-	vec2 textelSize = 1.0f/ textureSize(shadowMap, 0);
+	vec2 textelSize = 1.0f/ textureSize(lights[0].shadowMap, 0);
 	for(int x=-1; x <= 1; x++){
 		for(int y=-1; y <= 1; y++){
-		    float closestDepth = texture(shadowMap, projCoords.xy+vec2(x, y)*textelSize).r; 
-			shadow += currentDepth-0.0005f > closestDepth ? 1.0 : 0.0;
+		    float closestDepth = texture(lights[lightIndex].shadowMap, projCoords.xy+vec2(x, y)*textelSize).r; 
+			shadow += ((currentDepth-bias) > closestDepth ? 1.0 : 0.0);
 		}
 	}
 	
@@ -52,6 +65,7 @@ float ShadowCalculation(vec4 fragPosLightSpace)
     return shadow;
 }
 
+vec3 ambiantLight = vec3(0.2f, 0.2f, 0.2f);
 
 void main(void){
 	vec4 tex;
@@ -63,17 +77,45 @@ void main(void){
 		return;
 	}
 
-    vec3 pointToLight =normalize(-lightDir);
-    vec3 normal=normalize(sh_normal);
-    vec3 eye= normalize(worldeye_pos);
-    vec3 reflectDir= normalize(reflect(pointToLight,normal));
-    float lightFactor = max(0.0, dot(normal, pointToLight));
-    float specularFactor = pow(max(0.0, dot(reflectDir,eye)), color_Ns);
+	vec3 modelColor = tex.rgb*(color_Kd);
+	vec4 ambiantColor = tex*vec4(ambiantLight*color_Kd, color_Alpha);
 	
-    vec4 colorambient=tex*vec4(color_Kd*lightColor,color_Alpha);
-    vec4 colorlight=tex*vec4((lightFactor*color_Kd + specularFactor*color_Ks)*lightIntensity,color_Alpha);
+	vec3 lightColorSum = vec3(0.0f, 0.0f, 0.0f);
+	vec3 lightSpecularSum = vec3(0.0f, 0.0f, 0.0f);
 	
-	float shadow = ShadowCalculation(pos_LightSpace);
-	colorlight = vec4(colorlight.rgb*(1.0f-shadow), colorlight.a);
-	out_Color = colorlight+colorambient;
+	vec4 colorambient = tex*vec4(0.0f, 0.0f, 0.0f, color_Alpha);
+	vec4 colorlight = tex*vec4(0.0f, 0.0f, 0.0f,color_Alpha);
+	
+	float shadowSum = 0.0f;
+	float bias = 0.0005;
+
+
+	
+	for(int i=0; i < lightCount; i++){
+		vec3 pointToLight = normalize(-lights[i].dir);
+		vec3 normal=normalize(sh_normal);
+		vec3 eye= normalize(worldeye_pos);
+		vec3 reflectDir= normalize(reflect(pointToLight,normal));
+		float lightFactor = max(0.0, dot(normal, pointToLight));
+		float specularFactor = pow(max(0.0, dot(reflectDir,eye)), color_Ns);
+		
+		lightColorSum += lights[i].color*lightFactor*modelColor*lights[i].intensity;
+		lightSpecularSum += lights[i].color*specularFactor*tex.rgb*color_Ks*lights[i].intensity;
+		
+		pos_LightSpace[i] = (light_matrix[i]*vec4(vertPos, 1.0f));
+		shadowSum += ShadowCalculation(bias, i);
+		/*if(i == 1){
+			out_Color = vec4(1.0f, 0.0f, 0.0f, 1.0f);
+			return;
+		}*/
+		/*colorambient = vec4(colorambient.rgb + color_Kd*tex.rgb*lightColor[i],colorambient.a);
+		colorlight=tex*vec4((lightFactor*color_Kd + specularFactor*color_Ks)*lightIntensity[0],color_Alpha);*/
+	}
+	shadowSum /= lightCount;
+	
+	// Le bias augmente en fonction de l'angle entre la lumiere et l'objet
+	//if(dot(normal, -lightDir) < 0.25){ bias = 0.005; }else{ bias = 0.0005; }
+	//colorlight = vec4(colorlight.rgb*(1.0f-shadow), colorlight.a);
+	//out_Color = colorlight+colorambient;
+	out_Color = vec4(ambiantColor.rgb+(lightColorSum+lightSpecularSum)*(1.0f-shadowSum), ambiantColor.a);
 }

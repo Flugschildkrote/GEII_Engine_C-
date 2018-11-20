@@ -7,8 +7,7 @@
 #define KEY_ARRAY_SIZE GLFW_KEY_LAST+1
 #define MOUSE_BUTTON_ARRAY_SIZE GLFW_MOUSE_BUTTON_LAST+1
 
-#ifdef DEBUG
-#ifdef ENABLE_DEBUG_KEY_INPUT
+#if defined(DEBUG) && defined(ENABLE_DEBUG_KEY_INPUT)
 #define DEBUG_KEY_INPUT(stream) \
     std::string keyState; \
     switch(action){ \
@@ -26,10 +25,10 @@
     std::string keyName = (name == NULL) ? "Unknown Name" : name; \
     stream << "Key \"" << keyName << "\" " <<  keyState  << " : \nKey Code : " << key << "\nScan Code : " << scancode <<  "\nUsed code : " << keyValue << "\n\n";
 #else
-#define DEBUG_KEY_INPUT
+    #define DEBUG_KEY_INPUT(stream)
 #endif // ENABLE_DEBUG_KEY_INPUT
 
-#ifdef ENABLE_DEBUG_MOUSE_BUTTON_INPUT
+#if defined(DEBUG) && defined(ENABLE_DEBUG_MOUSE_BUTTON_INPUT)
     #define DEBUG_MOUSE_BUTTON_INPUT(stream) \
         std::string butState; \
         switch(action){ \
@@ -45,23 +44,22 @@
         }\
         stream << "Mouse button " << button << " " <<  butState << "\n\n";
 #else
-    #define DEBUG_MOUSE_BUTTON_INPUT
+    #define DEBUG_MOUSE_BUTTON_INPUT(stream)
 #endif // ENABLE_DEBUG_MOUSE_BUTTON_INPUT
 
-#ifdef ENABLE_DEBUG_MOUSE_MOVEMENT
+#if defined(DEBUG) && defined(ENABLE_DEBUG_MOUSE_MOVEMENT)
     #define DEBUG_MOUSE_MOVEMENT(stream) \
         stream << "Mouse moved : Pos[" << manager->mCursorX << "; " << manager->mCursorY << "], Move[ " << manager->mCursorMoveX << "; " << manager->mCursorMoveY << "]\n";
 #else
-    #define DEBUG_MOUSE_MOVEMENT
+    #define DEBUG_MOUSE_MOVEMENT(stream)
 #endif // defined
 
 
-#ifdef ENABLE_DEBUG_WINDOW_RESIZED
+#if defined(DEBUG) && defined(ENABLE_DEBUG_WINDOW_RESIZED)
     #define DEBUG_WINDOW_RESIZED(stream) stream << "Window Resized : ["  << width << "; " << height << "]\n";
 #else
-    #define DEBUG_MOUSE_MOVEMENT
+    #define DEBUG_WINDOW_RESIZED(stream)
 #endif // ENABLE_DEBUG_WINDOW_RESIZED
-#endif // DEBUG
 
 enum class KeyMode : unsigned char{
     KEYCODE,

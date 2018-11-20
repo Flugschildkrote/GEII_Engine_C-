@@ -116,6 +116,9 @@ void OGL_ShaderProgram::setUniform(GLuint location, const glm::vec3 &vec3) const
 void OGL_ShaderProgram::setUniform(GLuint location, float value)const {
     glUniform1f(location,value);
 }
+void OGL_ShaderProgram::setUniform(GLuint location, int value)const {
+    glUniform1i(location,value);
+}
 
 void OGL_ShaderProgram::setUniformTexture(GLuint location, GLint textureUnit) const{
     glUniform1i(location, textureUnit);

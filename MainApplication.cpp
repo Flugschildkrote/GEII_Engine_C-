@@ -20,7 +20,9 @@ MainApplication::~MainApplication(void){
 void MainApplication::clearContent(void){
     mPhongRender.reset(nullptr);
     mRenderPicking.reset(nullptr);
-    mFrameBuffer.reset(nullptr);
+    mConeObject.reset();
+    mFrameBuffers.clear();
+    mShadowMaps.clear();
 
     mScene.freeAll();
 }
@@ -45,7 +47,11 @@ bool MainApplication::initGL(void){
 
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-    glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GLFW_TRUE);
+    #ifdef DEBUG
+        glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GLFW_TRUE);
+    #else
+        glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GLFW_FALSE);
+    #endif
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_COMPAT_PROFILE);
     mGLFWwindow = glfwCreateWindow(mWidth, mHeight, mName.c_str(), nullptr, nullptr);
     if(!mGLFWwindow){
@@ -83,12 +89,31 @@ void MainApplication::initInput(void){
 
 bool MainApplication::loadResources(void){
 
-    mLight.ambiantColor = glm::vec3(0.5f, 0.5f, 0.5f);
-   // mLight.position = glm::vec3(10.0f, 10.0f, 10.0f);
-    mLight.power = glm::vec3(1.0f, 1.0f, 1.0f);
-    mLight.transform->translate(glm::vec3(10.0f, 10.0f, 10.0f));
-    mLight.transform->rotate(glm::radians(45.0f), AXIS_UP, SpaceReference::LOCAL);
-    mLight.transform->rotate(glm::radians(-45.0f), AXIS_RIGHT, SpaceReference::LOCAL);
+    /** LIGHTS **/
+    {
+        /** SUN*/
+        Light_sptr tmpLights[2];
+        tmpLights[0] = std::make_shared<Light>();
+        tmpLights[0]->ambiantColor = glm::vec3(0.1f, 0.8f, 0.1f);
+        tmpLights[0]->power = glm::vec3(1.0f, 1.0f, 1.0f);
+        tmpLights[0]->transform->translate(glm::vec3(10.0f, 10.0f, 10.0f));
+        tmpLights[0]->transform->rotate(glm::radians(45.0f), AXIS_UP, SpaceReference::LOCAL);
+        tmpLights[0]->transform->rotate(glm::radians(-45.0f), AXIS_RIGHT, SpaceReference::LOCAL);
+        tmpLights[0]->type = LIGHT_SUN;
+
+        /** SPOT **/
+        tmpLights[1] = std::make_shared<Light>();
+        tmpLights[1]->ambiantColor = glm::vec3(0.8f, 0.1f, 0.1f);
+        tmpLights[1]->power = glm::vec3(1.0f, 1.0f, 1.0f);
+        tmpLights[1]->transform->translate(glm::vec3(10.0f, 10.0f, 10.0f));
+        tmpLights[1]->transform->rotate(glm::radians(45.0f), AXIS_UP, SpaceReference::LOCAL);
+        tmpLights[1]->transform->rotate(glm::radians(-45.0f), AXIS_RIGHT, SpaceReference::LOCAL);
+        tmpLights[1]->angle = 70.0f;
+        tmpLights[1]->type = LIGHT_SUN;
+
+        mLights.push_back(tmpLights[0]);
+        mLights.push_back(tmpLights[1]);
+    }
 
    // mLight.dir = glm::vec3(-1.0f, -1.0f, -1.0f);
 
@@ -157,38 +182,39 @@ bool MainApplication::loadResources(void){
         texInfo.genMipMaps = false;
         texInfo.width = fboSize;
         texInfo.height = fboSize;
-        texInfo.format = GL_RGB;
         texInfo.wrapS = GL_CLAMP_TO_BORDER;
         texInfo.wrapT = GL_CLAMP_TO_BORDER;
-        Texture_sptr colorTexture = mScene.getNewTexture(texInfo, &id);
+        texInfo.format = GL_DEPTH_COMPONENT;
+        texInfo.pixelType = GL_FLOAT;
+        Texture_sptr depthTexture1 = mScene.getNewTexture(texInfo, &id);
+        Texture_sptr depthTexture2 = mScene.getNewTexture(texInfo, &id);
 
         AttachmentData attachmentData = {};
-        attachmentData.attachment = GL_COLOR_ATTACHMENT0;
-        attachmentData.textureID = colorTexture->getID();
+        attachmentData.attachment = GL_DEPTH_ATTACHMENT;
+        attachmentData.textureID = depthTexture1->getID();
 
         FrameBuffer_CreateInfo frameBufferInfo = {};
         frameBufferInfo.flags = FRAMEBUFFER_DISABLE_READ | FRAMEBUFFER_DISABLE_WRITE;
-       // frameBufferInfo.attachments.push_back(attachmentData);
-
-        texInfo.format = GL_DEPTH_COMPONENT;
-        texInfo.pixelType = GL_FLOAT;
-        Texture_sptr depthTexture = mScene.getNewTexture(texInfo, &id);
-        attachmentData.attachment = GL_DEPTH_ATTACHMENT;
-        attachmentData.textureID = depthTexture->getID();
         frameBufferInfo.attachments.push_back(attachmentData);
         frameBufferInfo.width = fboSize;
         frameBufferInfo.height = fboSize;
+        mFrameBuffers.push_back(std::make_unique<OGL_FrameBuffer>(frameBufferInfo));
 
-        mShadowMap = depthTexture;
+        attachmentData.textureID = depthTexture2->getID();
+        frameBufferInfo.attachments[0] = attachmentData;
+        mFrameBuffers.push_back(std::make_unique<OGL_FrameBuffer>(frameBufferInfo));
 
+        mShadowMaps.push_back(depthTexture1);
+        mShadowMaps.push_back(depthTexture2);
 
-        mFrameBuffer = std::make_unique<OGL_FrameBuffer>(frameBufferInfo);
 
         /** Carré pour afficher la texture de profondeur **/
         MaterialCreateInfo matInfo = {};
-        matInfo.texture = depthTexture;
+        matInfo.texture = depthTexture2;
         matInfo.lightSensitive = false;
         Material_sptr objectMaterial = mScene.getNewMaterial(matInfo, &id);
+        matInfo.texture = depthTexture1;
+        Material_sptr objectMaterial2 = mScene.getNewMaterial(matInfo, &id);
 
         ShapeCreateInfo shapeInfo = {};
         shapeInfo.sourceType = ShapeSource::SQUARE;
@@ -202,7 +228,11 @@ bool MainApplication::loadResources(void){
         objectInfo.shape = objectShape;
         Object_sptr object = mScene.getNewObject(objectInfo, &id);
         object->getTransform()->rotate(glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-        object->getTransform()->translate(glm::vec3(-4.999, 2.0f, 0), SpaceReference::WORLD);
+        object->getTransform()->translate(glm::vec3(-4.999, 2.0f, -2.1), SpaceReference::WORLD);
+        objectInfo.material = objectMaterial2;
+        object = mScene.getNewObject(objectInfo, &id);
+        object->getTransform()->rotate(glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+        object->getTransform()->translate(glm::vec3(-4.999, 2.0f, 2.1), SpaceReference::WORLD);
     }
 
     mCamera.mTransform->translate(glm::vec3(0.0f, 10.0f, -10.0f));
@@ -265,7 +295,6 @@ void MainApplication::run(void){
 }
 
 void MainApplication::processInput(void){
-
     if(mInputManager.getFlagState(MOUSE_BUTTON_CLICKED_FLAG)){
         if(mInputManager.getMouseButtonClicked(GLFW_MOUSE_BUTTON_1)){
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -299,46 +328,43 @@ void MainApplication::processInput(void){
         glfwSetInputMode(mGLFWwindow, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
     }
 
-    if(mInputManager.getKey(GLFW_KEY_F5)){
+   /* if(mInputManager.getKey(GLFW_KEY_F5)){
         glfwSetWindowMonitor(mGLFWwindow, glfwGetPrimaryMonitor(), 0, 0, 1920, 1080, 60);
         glfwSwapInterval(SWAP_INTERVAL);
-    }
+    }if(mInputManager.getKey(GLFW_KEY_F6)){
+        glfwSetWindowMonitor(mGLFWwindow, nullptr, 0, 0, 800, 600, 60);
+        glfwSwapInterval(SWAP_INTERVAL);
+    }*/
 
+    int lightIndex = 0;
+    if(alt) lightIndex = 1;
     if(mInputManager.getKey(GLFW_KEY_RIGHT)){
         if(!ctrl){
             mCamera.mTransform->translate(AXIS_RIGHT*cameraSpeed);
         }else{
-            mLight.transform->setTransformations(glm::rotate(glm::mat4(1.0f), -lightSpeed, glm::vec3(0.0f, 1.0f, 0.0f))*mLight.transform->getTransformations());
-           // mLight.position = glm::vec4(glm::rotate(glm::mat4(1.0f), lightSpeed, glm::vec3(0.0f, 1.0f, 0.0f))*glm::vec4(mLight.position, 1.0f));
-           // mLight.dir = glm::vec4(glm::rotate(glm::mat4(1.0f), lightSpeed, glm::vec3(0.0f, 1.0f, 0.0f))*glm::vec4(mLight.dir, 0.0f));
+
+            mLights[lightIndex]->transform->setTransformations(glm::rotate(glm::mat4(1.0f), -lightSpeed, glm::vec3(0.0f, 1.0f, 0.0f))*mLights[lightIndex]->transform->getTransformations());
         }
     }
     if(mInputManager.getKey(GLFW_KEY_LEFT)){
         if(!ctrl){
             mCamera.mTransform->translate(AXIS_LEFT*cameraSpeed);
         }else{
-            mLight.transform->setTransformations(glm::rotate(glm::mat4(1.0f), lightSpeed, glm::vec3(0.0f, 1.0f, 0.0f))*mLight.transform->getTransformations());
-//            mLight.position = glm::vec4(glm::rotate(glm::mat4(1.0f), -lightSpeed, glm::vec3(0.0f, 1.0f, 0.0f))*glm::vec4(mLight.position, 1.0f));
-        //    mLight.dir = glm::vec4(glm::rotate(glm::mat4(1.0f), -lightSpeed, glm::vec3(0.0f, 1.0f, 0.0f))*glm::vec4(mLight.dir, 0.0f));
+            mLights[lightIndex]->transform->setTransformations(glm::rotate(glm::mat4(1.0f), lightSpeed, glm::vec3(0.0f, 1.0f, 0.0f))*mLights[lightIndex]->transform->getTransformations());
         }
     }
     if(mInputManager.getKey(GLFW_KEY_UP)){
         if(!ctrl){
             mCamera.mTransform->translate(AXIS_FRONT*cameraSpeed);
         }else{
-            mLight.transform->setTransformations(glm::rotate(glm::mat4(1.0f), -lightSpeed, mLight.transform->getWorldAxis(AXIS_RIGHT))*mLight.transform->getTransformations());
-
-//            mLight.position = glm::vec4(glm::rotate(glm::mat4(1.0f), -lightSpeed, glm::cross(mLight.dir,glm::vec3(0.0f, 1.0f, 0.0f)))*glm::vec4(mLight.position, 1.0f));
-       //    mLight.dir = glm::vec4(glm::rotate(glm::mat4(1.0f), -lightSpeed, glm::cross(mLight.dir,glm::vec3(0.0f, 1.0f, 0.0f)))*glm::vec4(mLight.dir, 0.0f));
+            mLights[lightIndex]->transform->setTransformations(glm::rotate(glm::mat4(1.0f), -lightSpeed, mLights[lightIndex]->transform->getWorldAxis(AXIS_RIGHT))*mLights[lightIndex]->transform->getTransformations());
         }
     }
     if(mInputManager.getKey(GLFW_KEY_DOWN)){
         if(!ctrl){
             mCamera.mTransform->translate(AXIS_BACK*cameraSpeed);
         }else{
-            mLight.transform->setTransformations(glm::rotate(glm::mat4(1.0f), lightSpeed, mLight.transform->getWorldAxis(AXIS_RIGHT))*mLight.transform->getTransformations());
-          //  mLight.position = glm::vec4(glm::rotate(glm::mat4(1.0f), lightSpeed, glm::cross(mLight.dir,glm::vec3(0.0f, 1.0f, 0.0f)))*glm::vec4(mLight.position, 1.0f));
-         //   mLight.dir = glm::vec4(glm::rotate(glm::mat4(1.0f), lightSpeed, glm::cross(mLight.dir,glm::vec3(0.0f, 1.0f, 0.0f)))*glm::vec4(mLight.dir, 0.0f));
+            mLights[lightIndex]->transform->setTransformations(glm::rotate(glm::mat4(1.0f), lightSpeed, mLights[lightIndex]->transform->getWorldAxis(AXIS_RIGHT))*mLights[lightIndex]->transform->getTransformations());
         }
     }
 
@@ -390,19 +416,24 @@ void MainApplication::draw(void){
     if(mWidth == 0 || mHeight == 0)
         return;
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    mFrameBuffer->bind(true);
+
+    for(unsigned int i(0); i < mFrameBuffers.size(); i++){
+        mFrameBuffers[i]->bind(true);
         glClearColor(1.0f, 0.0f, 1.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        glViewport(0, 0, mFrameBuffer->getWidth(), mFrameBuffer->getHeight());
-        mCamera.mXres = mFrameBuffer->getWidth();
-        mCamera.mYres = mFrameBuffer->getHeight();
+        glViewport(0, 0, mFrameBuffers[i]->getWidth(), mFrameBuffers[i]->getHeight());
+        mCamera.mXres = mFrameBuffers[i]->getWidth();
+        mCamera.mYres = mFrameBuffers[i]->getHeight();
 
-        mShadowMapping->draw(&mScene, &mLight);
+        mShadowMapping->draw(&mScene, mLights[i].get());
+    }
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
     glViewport(0, 0, mWidth, mHeight);
     mCamera.mXres = mWidth;
     mCamera.mYres = mHeight;
-    mPhongRender->draw(&mScene, &mCamera, &mLight, mShadowMap);
+
+    mPhongRender->draw(&mScene, &mCamera, mLights, mShadowMaps);
     glfwSwapBuffers(mGLFWwindow);
 }

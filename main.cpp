@@ -22,6 +22,7 @@
 #include "Vector2.h"
 #include "Vector3.h"*/
 #include "MainApplication.h"
+#include "windows.h"
 
 using namespace std;
 
@@ -29,6 +30,6 @@ int main(int argc, char **argv)
 {
     MainApplication myApp("EngineGEII [C++]", 800, 600);
     myApp.run();
-
+    system("pause");
     return 0;
 }

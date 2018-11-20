@@ -16,6 +16,7 @@ public:
     void setUniform(GLuint location, const glm::vec4 &vec4) const;
     void setUniform(GLuint location, const glm::vec3 &vec3) const;
     void setUniform(GLuint location, float value) const;
+    void setUniform(GLuint location, int value) const;
     void setUniformTexture(GLuint location, GLint textureUnit) const;
 
     //------------------[TO DO]---------------------------------------------------------------------------------

@@ -21,7 +21,8 @@ Déplacer la caméra : Flèches directionnelles
 Tourner la caméra : Déplacer la souris  
   
 [LUMIERE]  
-Faire tourner la lumière : CTRL+Flèches directionnelles  
+Faire tourner la lumière 1 : CTRL+Flèches directionnelles  
+Faire tourner la lumière 2 : CTRL+ALT+Flèches directionnelles  
   
 [OBJETS]  
 Cacher un objet : Clic sur l'objet  
@@ -65,3 +66,6 @@ Ajout de la classe Transform pour gérer tous les déplacements
 [20/11/2018]  
 Ajout des ressources dans le dépot  
 Modification des ombres pour diminuer l'effet "pixelisé"  
+  
+[21/11/2018]  
+Gestion de plusieurs sources d'éclairage  

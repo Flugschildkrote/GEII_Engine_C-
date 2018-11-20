@@ -19,6 +19,7 @@ GLint Render::getUniform(const std::string &uniformName, OGL_ShaderProgram* shad
     if(result == GE_UNKNOWN_UNIFORM){
         throw geException("Failed to find uniform \""+uniformName+"\"");
     }
+    DEBUG_BLOCK(std::cerr << "Uniform \"" << uniformName << "\" : success, ID = " << result << std::endl;)
     return result;
 }
 
@@ -65,11 +66,15 @@ void RenderPhong::initUniforms(void){
     mU_MatLightSensitive = getUniform("lightSensitive", shader);
 
     /**[LIGHT]**/
-    mU_ShadowMap = getUniform("shadowMap", shader);
-    mU_LightMatrix = getUniform("light_matrix", shader);
-    mU_LightDir = getUniform("lightDir", shader);
-    mU_LightPower= getUniform("lightIntensity", shader);
-    mU_LightAmbiant = getUniform("lightColor", shader);
+    for(unsigned int i(0); i < MAX_LIGHTS; i++){
+        std::string num = std::to_string(i);
+        mU_LightMatrix[i] = getUniform("light_matrix["+num+"]", shader);
+        mU_ShadowMap[i] = getUniform("lights["+num+"].shadowMap", shader);
+        mU_LightDir[i] = getUniform("lights["+num+"].dir", shader);
+        mU_LightPower[i] = getUniform("lights["+num+"].intensity", shader);
+        mU_LightAmbiant[i] = getUniform("lights["+num+"].color", shader);
+    }
+    mU_LightCount = getUniform("lightCount", shader);
 
     /**[MODEL]**/
     mU_ModelMatrix = getUniform("model_matrix", shader);
@@ -85,7 +90,7 @@ void RenderPhong::initUniforms(void){
     mSkyboxShader->bind(false);
 }
 
-void RenderPhong::draw(Scene *scene, Camera *camera, Light* light, Texture_sptr shadowMap) const{
+void RenderPhong::draw(Scene *scene, Camera *camera,const std::vector<Light_sptr> &lights, const std::vector<Texture_sptr> &shadowMaps) const{
     bool skyboxSaveState = false;
 ///#########################[RENDU DE LA SKYBOX]############################################
     if(scene->hasSkybox()){
@@ -111,14 +116,16 @@ void RenderPhong::draw(Scene *scene, Camera *camera, Light* light, Texture_sptr 
     mShaderProgram->bind(true);
 
     // Définition de la shadowMap
-    mShaderProgram->setUniformTexture(mU_ShadowMap, 1); // Shadow map sur la texture n1
-    glActiveTexture(GL_TEXTURE1);
-    shadowMap->bind(true);
+    for(int i(0); i < shadowMaps.size(); i++){
+        mShaderProgram->setUniformTexture(mU_ShadowMap[i], i+1); // Shadow map sur la texture n1
+        glActiveTexture(GL_TEXTURE1+i);
+        shadowMaps[i]->bind(true);
     /**[LIGHT**/
-    mShaderProgram->setUniform(mU_LightDir,     light->transform->getWorldAxis(AXIS_FRONT));
-    mShaderProgram->setUniform(mU_LightPower,   light->power);
-    mShaderProgram->setUniform(mU_LightAmbiant, light->ambiantColor);
-
+        mShaderProgram->setUniform(mU_LightDir[i],     lights[i]->transform->getWorldAxis(AXIS_FRONT));
+        mShaderProgram->setUniform(mU_LightPower[i],   lights[i]->power);
+        mShaderProgram->setUniform(mU_LightAmbiant[i], lights[i]->ambiantColor);
+    }
+    mShaderProgram->setUniform(mU_LightCount, (int) lights.size());
 //Le point de vue
     mShaderProgram->setUniform(mU_WorldEyePos, glm::normalize(camera->mTransform->getWorldAxis(AXIS_FRONT)));
 //Fixe l'unitee de texture
@@ -142,9 +149,25 @@ void RenderPhong::draw(Scene *scene, Camera *camera, Light* light, Texture_sptr 
         glm::mat4 mvp, modelMatrix, lightMatrix;
         modelMatrix = object->getTransform()->getTransformations();
         mvp = camera->getProjectionMatrix()*camera->getViewMatrix()*modelMatrix;
-        lightMatrix = LIGHT_PROJECTION*glm::lookAt(light->transform->getPosition(),light->transform->getPosition()+light->transform->getWorldAxis(AXIS_FRONT), light->transform->getWorldAxis(AXIS_UP))*modelMatrix;
 
-        mShaderProgram->setUniform(mU_LightMatrix, lightMatrix);
+        for(unsigned int i(0); i < lights.size(); i++){
+            glm::mat4 lightProj;
+            switch(lights[i]->type){
+            case LIGHT_SUN :
+                lightProj = LIGHT_SUN_PROJECTION;
+                break;
+            case LIGHT_SPOT :
+                lightProj = LIGHT_SPOT_PROJECTION(lights[i]->angle);
+                break;
+            default :
+                break;
+            }
+
+            lightMatrix = lightProj*glm::lookAt(lights[i]->transform->getPosition(),lights[i]->transform->getPosition()+lights[i]->transform->getWorldAxis(AXIS_FRONT),
+                                                lights[i]->transform->getWorldAxis(AXIS_UP))*modelMatrix;
+            mShaderProgram->setUniform(mU_LightMatrix[i], lightMatrix);
+        }
+
         mShaderProgram->setUniform(mU_ModelMatrix, modelMatrix);
         mShaderProgram->setUniform(mU_MVP, mvp);
 
@@ -254,7 +277,19 @@ void RenderShadowMapping::draw(Scene* scene, Light *light){
         }
         glm::mat4 mvp, modelMatrix;
         modelMatrix = object->getTransform()->getTransformations();
-        glm::mat4 proj = LIGHT_PROJECTION;
+
+        glm::mat4 proj;
+        switch(light->type){
+        case LIGHT_SUN :
+            proj = LIGHT_SUN_PROJECTION;
+            break;
+        case LIGHT_SPOT :
+            proj = LIGHT_SPOT_PROJECTION(light->angle);
+            break;
+        default :
+            break;
+        }
+
         glm::mat4 view = glm::lookAt(light->transform->getPosition(),light->transform->getPosition()+light->transform->getWorldAxis(AXIS_FRONT), light->transform->getWorldAxis(AXIS_UP));
 
         mvp = proj*view*modelMatrix;

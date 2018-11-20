@@ -41,8 +41,4 @@ private:
     glm::vec3 mTrackingPoint;*/
 };
 
-using Transform_sptr = std::shared_ptr<Transform>;
-using Transform_wptr = std::weak_ptr<Transform>;
-using Transform_uptr = std::unique_ptr<Transform>;
-
 #endif // TRANSFORM_H
