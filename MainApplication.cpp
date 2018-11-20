@@ -247,6 +247,7 @@ void MainApplication::close(void){
 
 void MainApplication::run(void){
     try{
+
         if(!setup()){
             return;
         }
@@ -296,6 +297,11 @@ void MainApplication::processInput(void){
         glfwSetInputMode(mGLFWwindow, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     }if(mInputManager.getKey(GLFW_KEY_2)){
         glfwSetInputMode(mGLFWwindow, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+    }
+
+    if(mInputManager.getKey(GLFW_KEY_F5)){
+        glfwSetWindowMonitor(mGLFWwindow, glfwGetPrimaryMonitor(), 0, 0, 1920, 1080, 60);
+        glfwSwapInterval(SWAP_INTERVAL);
     }
 
     if(mInputManager.getKey(GLFW_KEY_RIGHT)){
@@ -381,6 +387,8 @@ void MainApplication::tick(void){
 }
 
 void MainApplication::draw(void){
+    if(mWidth == 0 || mHeight == 0)
+        return;
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     mFrameBuffer->bind(true);
         glClearColor(1.0f, 0.0f, 1.0f, 1.0f);

@@ -60,4 +60,8 @@ Implémentation des Frame Buffer Object
 Implémentation d'un système de Shadow Mapping  
   
 [18/11/2018]  
-Ajout de la classe Transform pour gérer tous les déplacements  
+Ajout de la classe Transform pour gérer tous les déplacements 
+  
+[20/11/2018]  
+Ajout des ressources dans le dépot  
+Modification des ombres pour diminuer l'effet "pixelisé"  
