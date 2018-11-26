@@ -10,8 +10,12 @@
 #include "OGL_FrameBuffer.h"
 #include "OGL_Texture.h"
 
+Shape_sptr CameraShape;
+OGL_ShaderProgram_sptr WireShader;
+
 MainApplication::MainApplication(const std::string &appName, unsigned int w, unsigned int h) : mName(appName), mWidth(w), mHeight(h), mGLFWwindow(nullptr), mScene(10,10,10,10),
 mInputManager(KeyMode::KEYCODE) { }
+
 
 MainApplication::~MainApplication(void){
 
@@ -94,8 +98,11 @@ bool MainApplication::loadResources(void){
         /** SUN*/
         Light_sptr tmpLights[2];
         tmpLights[0] = std::make_shared<Light>();
-        tmpLights[0]->ambiantColor = glm::vec3(0.1f, 0.8f, 0.1f);
+        tmpLights[0]->ambiantColor = glm::vec3(0.5f, 0.5f, 0.5f);
+       // tmpLights[0]->ambiantColor = glm::vec3(0.1f, 0.8f, 0.1f);
         tmpLights[0]->power = glm::vec3(1.0f, 1.0f, 1.0f);
+        //tmpLights[0]->power = glm::vec3(0.0f, 0.0f, 0.0f);
+
         tmpLights[0]->transform->translate(glm::vec3(10.0f, 10.0f, 10.0f));
         tmpLights[0]->transform->rotate(glm::radians(45.0f), AXIS_UP, SpaceReference::LOCAL);
         tmpLights[0]->transform->rotate(glm::radians(-45.0f), AXIS_RIGHT, SpaceReference::LOCAL);
@@ -103,13 +110,14 @@ bool MainApplication::loadResources(void){
 
         /** SPOT **/
         tmpLights[1] = std::make_shared<Light>();
-        tmpLights[1]->ambiantColor = glm::vec3(0.8f, 0.1f, 0.1f);
+        //tmpLights[1]->ambiantColor = glm::vec3(0.8f, 0.1f, 0.1f);
+        tmpLights[1]->ambiantColor = glm::vec3(0.5f, 0.5f, 0.5f);
         tmpLights[1]->power = glm::vec3(1.0f, 1.0f, 1.0f);
-        tmpLights[1]->transform->translate(glm::vec3(10.0f, 10.0f, 10.0f));
+        tmpLights[1]->transform->translate(glm::vec3(1.0f, 1.0f, 1.0f));
         tmpLights[1]->transform->rotate(glm::radians(45.0f), AXIS_UP, SpaceReference::LOCAL);
         tmpLights[1]->transform->rotate(glm::radians(-45.0f), AXIS_RIGHT, SpaceReference::LOCAL);
-        tmpLights[1]->angle = 70.0f;
-        tmpLights[1]->type = LIGHT_SUN;
+        tmpLights[1]->angle = 45.0f;
+        tmpLights[1]->type = LIGHT_SPOT;
 
         mLights.push_back(tmpLights[0]);
         mLights.push_back(tmpLights[1]);
@@ -124,14 +132,58 @@ bool MainApplication::loadResources(void){
     }
 
     // Chargement d'un fichier obj dans la scene
-   // Obj_Loader myObjLoader("Data/citroen_ds3/Citroen_DS3.obj", &mScene);
+  // Obj_Loader myObjLoader("Data/citroen_ds3/Citroen_DS3.obj", &mScene);
    // Obj_Loader myObjLoader("Data/Test_Obj/cat/cat.obj", &mScene);
     //myObjLoader.loadFile("Data/Test_Obj/cat/cat.obj", &mScene);
 
     Obj_Loader myObjLoader("Data/Test_Obj/ShadowTest/ShadowTest.obj", &mScene);
+  //  Obj_Loader myObjLoader("Data/Test_Obj/cat/cat.obj", &mScene);
     myObjLoader.loadFile("Data/Test_Obj/cat/cat.obj", &mScene);
+ //   myObjLoader.loadFile("Data/citroen_ds3/Citroen_DS3.obj", &mScene);
     mConeObject = mScene.getObject(1);
     mTransform = mConeObject->getTransform();
+   // mLights[1]->transform = mTransform;
+
+    {
+        MaterialCreateInfo matInfo = {};
+        matInfo.lightSensitive = false;
+        matInfo.ambiantColor_Kd = glm::vec3(1.0f, 0.5f, 0.5f);
+        unsigned int id;
+        Material_sptr myMaterial  = mScene.getNewMaterial(matInfo, &id);
+        ShapeCreateInfo shapeInfo = {};
+        shapeInfo.sourceType = ShapeSource::BOX;
+        shapeInfo.half_x = 0.02f;
+        shapeInfo.half_y = 0.02f;
+        shapeInfo.half_z = 0.02f;
+        Shape_sptr shape = mScene.getNewShape(shapeInfo, &id);
+        ObjectCreateInfo objecInfo = {};
+        objecInfo.material = myMaterial;
+        objecInfo.shape = shape;
+        Object_sptr object = mScene.getNewObject(objecInfo, &id);
+        //mLights[1]->transform = mCamera.mTransform;
+        object->setTransform(mLights[1]->transform);
+    }
+
+    {
+        ShapeCreateInfo createInfo = {};
+        createInfo.sourceType = ShapeSource::BOX;
+        CameraShape = std::make_shared<Shape>(createInfo);
+        CameraShape->loadCamera(mLights[1]->angle, 1.0f, 0.1f, 100.0f);
+        ShaderCreateInfo vShaderInfo = {};
+        vShaderInfo.fromFile_nFromMemory = true;
+        vShaderInfo.sourceFile = "Data/Shaders/Simple.vert";
+        ShaderCreateInfo fShaderInfo = {};
+        fShaderInfo.fromFile_nFromMemory = true;
+        fShaderInfo.sourceFile = "Data/Shaders/Simple.frag";
+        OGL_ShaderProgramCreateInfo programInfo = {};
+        programInfo.fragInfo = &fShaderInfo;
+        programInfo.vertInfo = &vShaderInfo;
+        WireShader = std::make_shared<OGL_ShaderProgram>(programInfo);
+    }
+
+
+    //myObjLoader.loadFile("Data/citroen_ds3/Citroen_DS3.obj", &mScene);
+
 
 
    // mCamera.mPos = glm::vec3(0,8,15);
@@ -175,7 +227,7 @@ bool MainApplication::loadResources(void){
 
      { // Frame Buffer
         unsigned int id;
-        int fboSize = 2048;
+        int fboSize = 2024;
         OGL_TextureCreateInfo texInfo = {};
         texInfo.fromFile_nFromBuffer = false;
         texInfo.sourceFile = "Data/Textures/earth_1024.bmp";
@@ -187,6 +239,9 @@ bool MainApplication::loadResources(void){
         texInfo.format = GL_DEPTH_COMPONENT;
         texInfo.pixelType = GL_FLOAT;
         Texture_sptr depthTexture1 = mScene.getNewTexture(texInfo, &id);
+        texInfo.magFilter = GL_LINEAR;
+        texInfo.minFilter = GL_LINEAR;
+       // texInfo.borderColor = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
         Texture_sptr depthTexture2 = mScene.getNewTexture(texInfo, &id);
 
         AttachmentData attachmentData = {};
@@ -311,15 +366,21 @@ void MainApplication::processInput(void){
     }
 
     float cameraRotSpeed = 0.005f;
+    bool alt = mInputManager.getKeyModifier(GLFW_MOD_ALT);
+
     if(mInputManager.getFlagState(MOUSE_MOVED_FLAG)){
-        mCamera.mTransform->rotate((float)-mInputManager.getMouseMoveY()*cameraRotSpeed, AXIS_RIGHT);
-        mCamera.mTransform->rotate((float)-mInputManager.getMouseMoveX()*cameraRotSpeed, AXIS_UP, SpaceReference::WORLD);
+        if(!alt){
+            mCamera.mTransform->rotate((float)-mInputManager.getMouseMoveY()*cameraRotSpeed, AXIS_RIGHT);
+            mCamera.mTransform->rotate((float)-mInputManager.getMouseMoveX()*cameraRotSpeed, AXIS_UP, SpaceReference::WORLD);
+        }else{
+            mLights[1]->transform->rotate((float)-mInputManager.getMouseMoveY()*cameraRotSpeed, AXIS_RIGHT);
+            mLights[1]->transform->rotate((float)-mInputManager.getMouseMoveX()*cameraRotSpeed, AXIS_UP, SpaceReference::WORLD);
+        }
 
         mInputManager.resetFlags(MOUSE_MOVED_FLAG);
     }
 
     bool ctrl = mInputManager.getKeyModifier(GLFW_MOD_CONTROL);
-    bool alt = mInputManager.getKeyModifier(GLFW_MOD_ALT);
     float cameraSpeed = 0.02f;
     float lightSpeed = 0.005f;
     if(mInputManager.getKey(GLFW_KEY_1)){
@@ -328,43 +389,56 @@ void MainApplication::processInput(void){
         glfwSetInputMode(mGLFWwindow, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
     }
 
-   /* if(mInputManager.getKey(GLFW_KEY_F5)){
-        glfwSetWindowMonitor(mGLFWwindow, glfwGetPrimaryMonitor(), 0, 0, 1920, 1080, 60);
+    if(mInputManager.getKey(GLFW_KEY_F5)){
+        glfwSetWindowMonitor(mGLFWwindow, glfwGetPrimaryMonitor(), 0, 0, 1920, 1080, 0);
         glfwSwapInterval(SWAP_INTERVAL);
-    }if(mInputManager.getKey(GLFW_KEY_F6)){
+    }/*if(mInputManager.getKey(GLFW_KEY_F6)){
         glfwSetWindowMonitor(mGLFWwindow, nullptr, 0, 0, 800, 600, 60);
         glfwSwapInterval(SWAP_INTERVAL);
     }*/
 
-    int lightIndex = 0;
-    if(alt) lightIndex = 1;
     if(mInputManager.getKey(GLFW_KEY_RIGHT)){
         if(!ctrl){
-            mCamera.mTransform->translate(AXIS_RIGHT*cameraSpeed);
+            if(!alt){
+                mCamera.mTransform->translate(AXIS_RIGHT*cameraSpeed);
+            }else{
+                mLights[1]->transform->translate(AXIS_RIGHT*lightSpeed);
+            }
         }else{
-
-            mLights[lightIndex]->transform->setTransformations(glm::rotate(glm::mat4(1.0f), -lightSpeed, glm::vec3(0.0f, 1.0f, 0.0f))*mLights[lightIndex]->transform->getTransformations());
+            mLights[0]->transform->setTransformations(glm::rotate(glm::mat4(1.0f), -lightSpeed, glm::vec3(0.0f, 1.0f, 0.0f))*mLights[0]->transform->getTransformations());
         }
     }
     if(mInputManager.getKey(GLFW_KEY_LEFT)){
         if(!ctrl){
-            mCamera.mTransform->translate(AXIS_LEFT*cameraSpeed);
+            if(!alt){
+                mCamera.mTransform->translate(AXIS_LEFT*cameraSpeed);
+            }else{
+                mLights[1]->transform->translate(AXIS_LEFT*lightSpeed);
+            }
         }else{
-            mLights[lightIndex]->transform->setTransformations(glm::rotate(glm::mat4(1.0f), lightSpeed, glm::vec3(0.0f, 1.0f, 0.0f))*mLights[lightIndex]->transform->getTransformations());
+            mLights[0]->transform->setTransformations(glm::rotate(glm::mat4(1.0f), lightSpeed, glm::vec3(0.0f, 1.0f, 0.0f))*mLights[0]->transform->getTransformations());
         }
     }
     if(mInputManager.getKey(GLFW_KEY_UP)){
         if(!ctrl){
-            mCamera.mTransform->translate(AXIS_FRONT*cameraSpeed);
+            if(!alt){
+                mCamera.mTransform->translate(AXIS_FRONT*cameraSpeed);
+            }else{
+                mLights[1]->transform->translate(AXIS_FRONT*lightSpeed);
+            }
         }else{
-            mLights[lightIndex]->transform->setTransformations(glm::rotate(glm::mat4(1.0f), -lightSpeed, mLights[lightIndex]->transform->getWorldAxis(AXIS_RIGHT))*mLights[lightIndex]->transform->getTransformations());
+            mLights[0]->transform->setTransformations(glm::rotate(glm::mat4(1.0f), -lightSpeed, mLights[0]->transform->getWorldAxis(AXIS_RIGHT))*mLights[0]->transform->getTransformations());
         }
     }
     if(mInputManager.getKey(GLFW_KEY_DOWN)){
         if(!ctrl){
-            mCamera.mTransform->translate(AXIS_BACK*cameraSpeed);
+            if(!alt){
+                mCamera.mTransform->translate(AXIS_BACK*cameraSpeed);
+            }else{
+                mLights[1]->transform->translate(AXIS_BACK*lightSpeed);
+            }
         }else{
-            mLights[lightIndex]->transform->setTransformations(glm::rotate(glm::mat4(1.0f), lightSpeed, mLights[lightIndex]->transform->getWorldAxis(AXIS_RIGHT))*mLights[lightIndex]->transform->getTransformations());
+            mLights[0]->transform->setTransformations(glm::rotate(glm::mat4(1.0f), lightSpeed, mLights[0]->transform->getWorldAxis(AXIS_RIGHT))*mLights[0]->transform->getTransformations());
         }
     }
 
@@ -435,5 +509,14 @@ void MainApplication::draw(void){
     mCamera.mYres = mHeight;
 
     mPhongRender->draw(&mScene, &mCamera, mLights, mShadowMaps);
+   glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
+    WireShader->bind(true);
+        glm::mat4 mvp = LIGHT_SPOT_PROJECTION(mLights[1]->angle)*glm::lookAt(mLights[1]->transform->getPosition(),mLights[1]->transform->getPosition()+mLights[1]->transform->getWorldAxis(AXIS_FRONT),
+                                                mLights[1]->transform->getWorldAxis(AXIS_UP))*mLights[1]->transform->getTransformations();
+        mvp = mCamera.getProjectionMatrix()*mCamera.getViewMatrix()*mLights[1]->transform->getTransformations();
+        WireShader->setUniform(WireShader->getUniformLocation("mvp"), mvp);
+        CameraShape->draw();
+    WireShader->bind(false);
+    glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
     glfwSwapBuffers(mGLFWwindow);
 }

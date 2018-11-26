@@ -6,7 +6,7 @@
 #define GE_UNKNOWN_UNIFORM -1
 
 #define LIGHT_SUN_PROJECTION glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, 0.1f, 200.0f)
-#define LIGHT_SPOT_PROJECTION(angle) glm::perspective(angle, 1.0f, 1.0f, 200.0f)
+#define LIGHT_SPOT_PROJECTION(angle) glm::perspective(glm::radians(angle), 1.0f, 0.1f, 200.0f)
 
 #define MAX_LIGHTS 2
 class RenderShadowMapping;
@@ -45,6 +45,9 @@ protected:
     /**[LIGHT]**/
     GLint mU_LightMatrix[MAX_LIGHTS], mU_ShadowMap[MAX_LIGHTS];
     GLint mU_LightDir[MAX_LIGHTS], mU_LightPower[MAX_LIGHTS], mU_LightAmbiant[MAX_LIGHTS];
+    GLint mU_LightType[MAX_LIGHTS];
+    GLint mU_LightPos[MAX_LIGHTS];
+    GLint mU_LightAngle[MAX_LIGHTS];
     GLint mU_LightCount;
     /**[MODEL]**/
     GLint mU_ModelMatrix;

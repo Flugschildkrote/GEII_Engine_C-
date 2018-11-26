@@ -21,6 +21,7 @@ public:
     void loadCylinder(unsigned int slice, float radius, float heigh);
     void loadCone(unsigned int edgesCount, float radius, float height);
     void loadTorus(unsigned int sideCount, unsigned int slice, float radius, float radiusBis);
+    void loadCamera(float fov, float ratio, float near, float far);
 
     void draw(void);
 private:
@@ -28,6 +29,7 @@ private:
 
     OGL_Buffer_uptr mVbo; // Vertex
     OGL_Buffer_uptr mIbo;
+    GLenum mDrawMode;
 
     unsigned int mVerticeCount;
     unsigned int mIndicesCount;

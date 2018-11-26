@@ -4,8 +4,10 @@
 #include <exception>
 #include <cmath>
 #include "geException.h"
+#include "glm/gtc/constants.hpp"
 
 Shape::Shape(const ShapeCreateInfo &createInfo) : mVbo(nullptr), mIbo(nullptr), mVerticeCount(0), mIndicesCount(0){
+    mDrawMode = GL_TRIANGLES;
     try{
         switch(createInfo.sourceType){
         case ShapeSource::BOX :
@@ -436,6 +438,52 @@ void Shape::loadTorus(unsigned int sideCount, unsigned int slice, float radius, 
     load(verticeArray, uvArray, normalsArray, indiceArray);
 }
 
+void Shape::loadCamera(float fov , float ratio, float zNear, float zFar){
+    // formes : un cube déformé selon l'angle
+    glm::vec3 nearPlane_LD, nearPlane_RD,nearPlane_LU, nearPlane_RU, farPlane_LD, farPlane_RD,farPlane_LU, farPlane_RU;
+
+    float phi = fov/360.0f*glm::pi<float>(); // semi Angle vertical en radians
+    float cosPhi = std::cos(phi); // ratio de l'angle
+    float sinPhi = std::sin(phi); // ratio de l'angle
+
+    // cos(rad)*factor = near -> factor = near/cos(rad);
+    float factor = zNear/cosPhi;
+    float y1 = sinPhi*factor;
+    factor = zFar/cosPhi;
+    float y2 = sinPhi*factor;
+    float x1 = y1/ratio;
+    float x2 = y2/ratio;
+
+    // std::vector<float> verticeList = {
+     //   /* Face Avant*/   -x1,-y1, zNear,    x1,-y1, zNear,       x1, y1, zNear,         -x1, y1, zNear,
+     //   /* Face Droite*/   x1,-y1, zNear,    x2,-y2, zFar,       x1, y1, zNear,           x2, y2, zFar,
+     //   /* Face Arrière*/  x2,-y2,-zFar,     -x2,-y2,-zFar,      -x2, y2,-zFar,           x2, y2,-zFar,
+     //   /* Face Gauche*/  -x1,-y1, zNear,   -x2,-y2, zFar,       -x1, y1, zNear,         -x2, y2, zFar,
+    //    /* Face Up*/      -x, y, z,      x, y, z,       x, y,-z,          -x, y,-z,
+     //   /* Face Bas*/      x,-y, z,     -x,-y, z,      -x,-y,-z,           x,-y,-z
+   // };
+
+     std::vector<float> verticeList = {
+        /* Face Avant*/   -x1,-y1, -zNear,    x1,-y1, -zNear,       x1, y1, -zNear,         -x1, y1, -zNear,
+        /* Face Arrière*/ -x2,-y2, -zFar,     x2,-y2, -zFar,        x2, y2, -zFar,          -x2, y2, -zFar,
+                        0.0f, 0.0f, 0.0f
+     //   /* Face Gauche*/  -x1,-y1, zNear,   -x2,-y2, zFar,       -x1, y1, zNear,         -x2, y2, zFar,
+    //    /* Face Up*/      -x, y, z,      x, y, z,       x, y,-z,          -x, y,-z,
+     //   /* Face Bas*/      x,-y, z,     -x,-y, z,      -x,-y,-z,           x,-y,-z*/
+    };
+
+    std::vector<unsigned int> indice = {
+        0,1,  1,2,  2,3,  3,0,
+        4,5,  5,6,  6,7,  7,4,
+        2,6,  3,7,  0,4,  1,5,
+        8,0,  8,3,  8,2,  8,1
+    };
+
+    std::vector<float> normals, uvs;
+    mDrawMode = GL_LINES;
+    load(verticeList, uvs, normals, indice);
+}
+
 void Shape::load(const std::vector<float> &vertice, const std::vector<float> &textUV, const std::vector<float> &normals, const std::vector<unsigned int> &indices){
     size_t floatBytes = sizeof(float);
     unsigned int vertBytes = vertice.size()*floatBytes;
@@ -485,7 +533,7 @@ void Shape::draw(void){
             glEnableVertexAttribArray(1);
             glEnableVertexAttribArray(2);
 //Affiche tous les elements du buffer
-            glDrawElements(GL_TRIANGLES, mIndicesCount , GL_UNSIGNED_INT, 0);
+            glDrawElements(mDrawMode, mIndicesCount , GL_UNSIGNED_INT, 0);
 //Desactive les attibuts (pour utiliser autre chose que les shaders, par exemple le mode immediat).
             glDisableVertexAttribArray(0);
             glDisableVertexAttribArray(1);

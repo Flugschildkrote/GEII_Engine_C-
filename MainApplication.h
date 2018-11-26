@@ -47,7 +47,6 @@ private:
     std::vector<std::unique_ptr<OGL_FrameBuffer> > mFrameBuffers;
     std::vector<Light_sptr> mLights;
     std::vector<Texture_sptr> mShadowMaps;
-
     Object_sptr mConeObject;
 
     Transform_sptr mTransform;

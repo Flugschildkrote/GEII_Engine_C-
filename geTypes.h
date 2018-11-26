@@ -17,7 +17,8 @@ enum class ShapeSource : uint8_t {
     TORUS = 4,
     FROM_BUFFER = 5,
     SQUARE = 6,
-    SKYBOX = 7
+    SKYBOX = 7,
+    CAMERA = 8
 };
 struct ShapeCreateInfo{
     ShapeSource sourceType = ShapeSource::FROM_BUFFER;

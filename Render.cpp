@@ -73,6 +73,9 @@ void RenderPhong::initUniforms(void){
         mU_LightDir[i] = getUniform("lights["+num+"].dir", shader);
         mU_LightPower[i] = getUniform("lights["+num+"].intensity", shader);
         mU_LightAmbiant[i] = getUniform("lights["+num+"].color", shader);
+        mU_LightType[i] = getUniform("lights["+num+"].type", shader);
+        mU_LightPos[i] = getUniform("lights["+num+"].pos", shader);
+        mU_LightAngle[i] = getUniform("lights["+num+"].angle", shader);
     }
     mU_LightCount = getUniform("lightCount", shader);
 
@@ -124,10 +127,13 @@ void RenderPhong::draw(Scene *scene, Camera *camera,const std::vector<Light_sptr
         mShaderProgram->setUniform(mU_LightDir[i],     lights[i]->transform->getWorldAxis(AXIS_FRONT));
         mShaderProgram->setUniform(mU_LightPower[i],   lights[i]->power);
         mShaderProgram->setUniform(mU_LightAmbiant[i], lights[i]->ambiantColor);
+        mShaderProgram->setUniform(mU_LightType[i],    lights[i]->type);
+        mShaderProgram->setUniform(mU_LightPos[i],    lights[i]->transform->getPosition());
+        mShaderProgram->setUniform(mU_LightAngle[i],   lights[i]->angle);
     }
     mShaderProgram->setUniform(mU_LightCount, (int) lights.size());
 //Le point de vue
-    mShaderProgram->setUniform(mU_WorldEyePos, glm::normalize(camera->mTransform->getWorldAxis(AXIS_FRONT)));
+    mShaderProgram->setUniform(mU_WorldEyePos, glm::normalize(camera->mTransform->getPosition()));
 //Fixe l'unitee de texture
     mShaderProgram->setUniformTexture(mU_MatText, 0);
     glActiveTexture(GL_TEXTURE0);
@@ -201,9 +207,28 @@ void RenderPhong::draw(Scene *scene, Camera *camera,const std::vector<Light_sptr
             continue;
         }
         //Fixe la matrice mvp
-        glm::mat4 mvp, modelMatrix;
+        glm::mat4 mvp, modelMatrix,lightMatrix;
         modelMatrix = object->getTransform()->getTransformations();
         mvp = camera->getProjectionMatrix()*camera->getViewMatrix()*modelMatrix;
+
+         for(unsigned int i(0); i < lights.size(); i++){
+            glm::mat4 lightProj;
+            switch(lights[i]->type){
+            case LIGHT_SUN :
+                lightProj = LIGHT_SUN_PROJECTION;
+                break;
+            case LIGHT_SPOT :
+                lightProj = LIGHT_SPOT_PROJECTION(lights[i]->angle);
+                break;
+            default :
+                break;
+            }
+
+            lightMatrix = lightProj*glm::lookAt(lights[i]->transform->getPosition(),lights[i]->transform->getPosition()+lights[i]->transform->getWorldAxis(AXIS_FRONT),
+                                                lights[i]->transform->getWorldAxis(AXIS_UP))*modelMatrix;
+            mShaderProgram->setUniform(mU_LightMatrix[i], lightMatrix);
+        }
+
         mShaderProgram->setUniform(mU_ModelMatrix, modelMatrix);
         mShaderProgram->setUniform(mU_MVP, mvp);
 
