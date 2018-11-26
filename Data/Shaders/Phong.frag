@@ -104,10 +104,10 @@ void main(void){
 		}else{
 			vec3 pointToLight = normalize(lights[i].pos-worldPos);
 			vec3 normal=normalize(sh_normal);
-			vec3 eye= normalize(worldeye_pos);
-			vec3 reflectDir= normalize(reflect(pointToLight,normal));
 			float angle = acos(dot(pointToLight, -lights[i].dir))*360.0/(2.0*3.14);
 			if(angle*2 <= lights[i].angle){
+				vec3 eye= normalize(worldeye_pos);
+				vec3 reflectDir= normalize(reflect(pointToLight,normal));
 				float shadow = (1.0-ShadowCalculation(bias, i));
 				float lightFactor = max(0.0, dot(normal, pointToLight));
 				float specularFactor = pow(max(0.0, dot(reflectDir,eye)), color_Ns);

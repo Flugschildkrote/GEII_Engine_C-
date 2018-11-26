@@ -69,3 +69,9 @@ Modification des ombres pour diminuer l'effet "pixelisé"
   
 [21/11/2018]  
 Gestion de plusieurs sources d'éclairage  
+
+[26/11/2018]
+Misa a jour du système d'éclairage afin qu'il soit plus cohérent.
+Ajout de types aux lumières :
+	Sun (Lumière directionnelle)
+	Spot (Lampe torche)
