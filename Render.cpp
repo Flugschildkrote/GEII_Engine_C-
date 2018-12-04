@@ -7,6 +7,7 @@
 #include "OGL_Texture.h"
 #include "Shape.h"
 #include "Camera.h"
+#include "Light.h"
 
 /**************[RENDER]***************************************/
 Render::Render(void) : mShaderProgram(nullptr){
@@ -93,7 +94,7 @@ void RenderPhong::initUniforms(void){
     mSkyboxShader->bind(false);
 }
 
-void RenderPhong::draw(Scene *scene, Camera *camera,const std::vector<Light_sptr> &lights, const std::vector<Texture_sptr> &shadowMaps) const{
+void RenderPhong::draw(Scene *scene, Camera *camera,const std::vector<Light_sptr> &lights) const{
     bool skyboxSaveState = false;
 ///#########################[RENDU DE LA SKYBOX]############################################
     if(scene->hasSkybox()){
@@ -119,11 +120,11 @@ void RenderPhong::draw(Scene *scene, Camera *camera,const std::vector<Light_sptr
     mShaderProgram->bind(true);
 
     // Définition de la shadowMap
-    for(int i(0); i < shadowMaps.size(); i++){
+    for(int i(0); i < lights.size(); i++){
         mShaderProgram->setUniformTexture(mU_ShadowMap[i], i+1); // Shadow map sur la texture n1
         glActiveTexture(GL_TEXTURE1+i);
-        shadowMaps[i]->bind(true);
-    /**[LIGHT**/
+        lights[i]->shadowMap->bind(true);
+        /**[LIGHT**/
         mShaderProgram->setUniform(mU_LightDir[i],     lights[i]->transform->getWorldAxis(AXIS_FRONT));
         mShaderProgram->setUniform(mU_LightPower[i],   lights[i]->power);
         mShaderProgram->setUniform(mU_LightAmbiant[i], lights[i]->ambiantColor);

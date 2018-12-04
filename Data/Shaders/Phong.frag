@@ -89,16 +89,18 @@ void main(void){
 	
 	for(int i=0; i < lightCount; i++){
 		if(lights[i].type == LIGHT_SUN){
-			vec3 pointToLight = normalize(-lights[i].dir);
-			vec3 normal=normalize(sh_normal);
-			vec3 eye= normalize(worldeye_pos);
-			vec3 reflectDir= normalize(reflect(pointToLight,normal));
-			float lightFactor = max(0.0, dot(normal, pointToLight));
-			float specularFactor = pow(max(0.0, dot(reflectDir,eye)), color_Ns);
-			
 			float shadow = (1.0-ShadowCalculation(bias, i));
-			lightColorSum += lights[i].color*lightFactor*lights[i].intensity*shadow;
-			lightSpecularSum += lights[i].color*specularFactor*lights[i].intensity*shadow;
+			if(shadow > 0){
+				vec3 pointToLight = normalize(-lights[i].dir);
+				vec3 normal=normalize(sh_normal);
+				vec3 eye= normalize(worldeye_pos);
+				vec3 reflectDir= normalize(reflect(pointToLight,normal));
+				float lightFactor = max(0.0, dot(normal, pointToLight));
+				float specularFactor = pow(max(0.0, dot(reflectDir,eye)), color_Ns);
+				
+				lightColorSum += lights[i].color*lightFactor*lights[i].intensity*shadow;
+				lightSpecularSum += lights[i].color*specularFactor*lights[i].intensity*shadow;
+			}
 			
 			//shadowSum += ;
 		}else{

@@ -11,14 +11,6 @@
 #define MAX_LIGHTS 2
 class RenderShadowMapping;
 
-struct Light{
-    glm::vec3 ambiantColor;
-    glm::vec3 power;
-    LightType type;
-    float angle;
-    Transform_sptr transform = std::make_shared<Transform>();
-};
-
 class Render{
 public:
     Render(void);
@@ -35,7 +27,7 @@ public:
     RenderPhong(void);
     virtual ~RenderPhong(void);
 
-    virtual void draw(Scene *scene, Camera *camera, const std::vector<Light_sptr> &lights, const std::vector<Texture_sptr> &shadowMaps) const;
+    virtual void draw(Scene *scene, Camera *camera, const std::vector<Light_sptr> &lights) const;
 protected:
     virtual void initUniforms(void);
     //std::unique_ptr<RenderShadowMapping> mShadowMappingRender;

@@ -9,6 +9,7 @@
 #include "Scancodes.h"
 #include "OGL_FrameBuffer.h"
 #include "OGL_Texture.h"
+#include "Light.h"
 
 Shape_sptr CameraShape;
 OGL_ShaderProgram_sptr WireShader;
@@ -26,7 +27,8 @@ void MainApplication::clearContent(void){
     mRenderPicking.reset(nullptr);
     mConeObject.reset();
     mFrameBuffers.clear();
-    mShadowMaps.clear();
+    mLights.clear();
+    //mShadowMaps.clear();
 
     mScene.freeAll();
 }
@@ -92,14 +94,15 @@ void MainApplication::initInput(void){
 }
 
 bool MainApplication::loadResources(void){
+   // mLight.dir = glm::vec3(-1.0f, -1.0f, -1.0f);
 
-    /** LIGHTS **/
+     /** LIGHTS **/
     {
         /** SUN*/
         Light_sptr tmpLights[2];
         tmpLights[0] = std::make_shared<Light>();
         tmpLights[0]->ambiantColor = glm::vec3(0.5f, 0.5f, 0.5f);
-       // tmpLights[0]->ambiantColor = glm::vec3(0.1f, 0.8f, 0.1f);
+        tmpLights[0]->ambiantColor = glm::vec3(0.1f, 0.8f, 0.1f);
         tmpLights[0]->power = glm::vec3(1.0f, 1.0f, 1.0f);
         //tmpLights[0]->power = glm::vec3(0.0f, 0.0f, 0.0f);
 
@@ -121,9 +124,73 @@ bool MainApplication::loadResources(void){
 
         mLights.push_back(tmpLights[0]);
         mLights.push_back(tmpLights[1]);
-    }
 
-   // mLight.dir = glm::vec3(-1.0f, -1.0f, -1.0f);
+        { // Frame Buffer
+            unsigned int id;
+            int fboSize = 2024;
+            OGL_TextureCreateInfo texInfo = {};
+            texInfo.fromFile_nFromBuffer = false;
+            texInfo.sourceFile = "Data/Textures/earth_1024.bmp";
+            texInfo.genMipMaps = false;
+            texInfo.width = fboSize;
+            texInfo.height = fboSize;
+            texInfo.wrapS = GL_CLAMP_TO_BORDER;
+            texInfo.wrapT = GL_CLAMP_TO_BORDER;
+            texInfo.format = GL_DEPTH_COMPONENT;
+            texInfo.pixelType = GL_FLOAT;
+            Texture_sptr depthTexture1 = mScene.getNewTexture(texInfo, &id);
+           /* texInfo.magFilter = GL_LINEAR;
+            texInfo.minFilter = GL_LINEAR;*/
+           // texInfo.borderColor = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
+            Texture_sptr depthTexture2 = mScene.getNewTexture(texInfo, &id);
+
+            AttachmentData attachmentData = {};
+            attachmentData.attachment = GL_DEPTH_ATTACHMENT;
+            attachmentData.textureID = depthTexture1->getID();
+
+            FrameBuffer_CreateInfo frameBufferInfo = {};
+            frameBufferInfo.flags = FRAMEBUFFER_DISABLE_READ | FRAMEBUFFER_DISABLE_WRITE;
+            frameBufferInfo.attachments.push_back(attachmentData);
+            frameBufferInfo.width = fboSize;
+            frameBufferInfo.height = fboSize;
+            mFrameBuffers.push_back(std::make_unique<OGL_FrameBuffer>(frameBufferInfo));
+
+            attachmentData.textureID = depthTexture2->getID();
+            frameBufferInfo.attachments[0] = attachmentData;
+            mFrameBuffers.push_back(std::make_unique<OGL_FrameBuffer>(frameBufferInfo));
+
+            tmpLights[0]->shadowMap = depthTexture1;
+            tmpLights[1]->shadowMap = depthTexture2;
+            //mShadowMaps.push_back(depthTexture1);
+            //mShadowMaps.push_back(depthTexture2);
+
+            /** Carré pour afficher la texture de profondeur **/
+            MaterialCreateInfo matInfo = {};
+            matInfo.texture = depthTexture2;
+            matInfo.lightSensitive = false;
+            Material_sptr objectMaterial = mScene.getNewMaterial(matInfo, &id);
+            matInfo.texture = depthTexture1;
+            Material_sptr objectMaterial2 = mScene.getNewMaterial(matInfo, &id);
+
+            ShapeCreateInfo shapeInfo = {};
+            shapeInfo.sourceType = ShapeSource::SQUARE;
+            shapeInfo.half_x = 2.0f;
+            shapeInfo.half_y = 2.0f;
+            shapeInfo.half_z = 1.0f;
+            Shape_wptr objectShape = mScene.getNewShape(shapeInfo, &id);
+
+            ObjectCreateInfo objectInfo = {};
+            objectInfo.material = objectMaterial;
+            objectInfo.shape = objectShape;
+            Object_sptr object = mScene.getNewObject(objectInfo, &id);
+            object->getTransform()->rotate(glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+            object->getTransform()->translate(glm::vec3(-4.999, 2.0f, -2.1), SpaceReference::WORLD);
+            objectInfo.material = objectMaterial2;
+            object = mScene.getNewObject(objectInfo, &id);
+            object->getTransform()->rotate(glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+            object->getTransform()->translate(glm::vec3(-4.999, 2.0f, 2.1), SpaceReference::WORLD);
+        }
+    }
 
     { //##########[CREATION DU RENDER]##########
         mPhongRender = std::make_unique<RenderPhong>();
@@ -139,7 +206,7 @@ bool MainApplication::loadResources(void){
     Obj_Loader myObjLoader("Data/Test_Obj/ShadowTest/ShadowTest.obj", &mScene);
   //  Obj_Loader myObjLoader("Data/Test_Obj/cat/cat.obj", &mScene);
     myObjLoader.loadFile("Data/Test_Obj/cat/cat.obj", &mScene);
- //   myObjLoader.loadFile("Data/citroen_ds3/Citroen_DS3.obj", &mScene);
+  //  myObjLoader.loadFile("Data/citroen_ds3/Citroen_DS3.obj", &mScene);
     mConeObject = mScene.getObject(1);
     mTransform = mConeObject->getTransform();
    // mLights[1]->transform = mTransform;
@@ -223,71 +290,6 @@ bool MainApplication::loadResources(void){
         skyboxInfo.shape = skyboxShape;
         Object_sptr skyboxObject = mScene.getNewObject(skyboxInfo, &id);
         mScene.setSkybox(skyboxObject);
-    }
-
-     { // Frame Buffer
-        unsigned int id;
-        int fboSize = 2024;
-        OGL_TextureCreateInfo texInfo = {};
-        texInfo.fromFile_nFromBuffer = false;
-        texInfo.sourceFile = "Data/Textures/earth_1024.bmp";
-        texInfo.genMipMaps = false;
-        texInfo.width = fboSize;
-        texInfo.height = fboSize;
-        texInfo.wrapS = GL_CLAMP_TO_BORDER;
-        texInfo.wrapT = GL_CLAMP_TO_BORDER;
-        texInfo.format = GL_DEPTH_COMPONENT;
-        texInfo.pixelType = GL_FLOAT;
-        Texture_sptr depthTexture1 = mScene.getNewTexture(texInfo, &id);
-        texInfo.magFilter = GL_LINEAR;
-        texInfo.minFilter = GL_LINEAR;
-       // texInfo.borderColor = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
-        Texture_sptr depthTexture2 = mScene.getNewTexture(texInfo, &id);
-
-        AttachmentData attachmentData = {};
-        attachmentData.attachment = GL_DEPTH_ATTACHMENT;
-        attachmentData.textureID = depthTexture1->getID();
-
-        FrameBuffer_CreateInfo frameBufferInfo = {};
-        frameBufferInfo.flags = FRAMEBUFFER_DISABLE_READ | FRAMEBUFFER_DISABLE_WRITE;
-        frameBufferInfo.attachments.push_back(attachmentData);
-        frameBufferInfo.width = fboSize;
-        frameBufferInfo.height = fboSize;
-        mFrameBuffers.push_back(std::make_unique<OGL_FrameBuffer>(frameBufferInfo));
-
-        attachmentData.textureID = depthTexture2->getID();
-        frameBufferInfo.attachments[0] = attachmentData;
-        mFrameBuffers.push_back(std::make_unique<OGL_FrameBuffer>(frameBufferInfo));
-
-        mShadowMaps.push_back(depthTexture1);
-        mShadowMaps.push_back(depthTexture2);
-
-
-        /** Carré pour afficher la texture de profondeur **/
-        MaterialCreateInfo matInfo = {};
-        matInfo.texture = depthTexture2;
-        matInfo.lightSensitive = false;
-        Material_sptr objectMaterial = mScene.getNewMaterial(matInfo, &id);
-        matInfo.texture = depthTexture1;
-        Material_sptr objectMaterial2 = mScene.getNewMaterial(matInfo, &id);
-
-        ShapeCreateInfo shapeInfo = {};
-        shapeInfo.sourceType = ShapeSource::SQUARE;
-        shapeInfo.half_x = 2.0f;
-        shapeInfo.half_y = 2.0f;
-        shapeInfo.half_z = 1.0f;
-        Shape_wptr objectShape = mScene.getNewShape(shapeInfo, &id);
-
-        ObjectCreateInfo objectInfo = {};
-        objectInfo.material = objectMaterial;
-        objectInfo.shape = objectShape;
-        Object_sptr object = mScene.getNewObject(objectInfo, &id);
-        object->getTransform()->rotate(glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-        object->getTransform()->translate(glm::vec3(-4.999, 2.0f, -2.1), SpaceReference::WORLD);
-        objectInfo.material = objectMaterial2;
-        object = mScene.getNewObject(objectInfo, &id);
-        object->getTransform()->rotate(glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-        object->getTransform()->translate(glm::vec3(-4.999, 2.0f, 2.1), SpaceReference::WORLD);
     }
 
     mCamera.mTransform->translate(glm::vec3(0.0f, 10.0f, -10.0f));
@@ -508,7 +510,7 @@ void MainApplication::draw(void){
     mCamera.mXres = mWidth;
     mCamera.mYres = mHeight;
 
-    mPhongRender->draw(&mScene, &mCamera, mLights, mShadowMaps);
+    mPhongRender->draw(&mScene, &mCamera, mLights);
    glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
     WireShader->bind(true);
         glm::mat4 mvp = LIGHT_SPOT_PROJECTION(mLights[1]->angle)*glm::lookAt(mLights[1]->transform->getPosition(),mLights[1]->transform->getPosition()+mLights[1]->transform->getWorldAxis(AXIS_FRONT),

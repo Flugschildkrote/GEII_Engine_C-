@@ -22,7 +22,7 @@ Tourner la caméra : Déplacer la souris
   
 [LUMIERE]  
 Faire tourner la lumière 1 : CTRL+Flèches directionnelles  
-Faire tourner la lumière 2 : CTRL+ALT+Flèches directionnelles  
+Faire tourner la lumière 2 : ALT+Flèches directionnelles  
   
 [OBJETS]  
 Cacher un objet : Clic sur l'objet  
@@ -69,9 +69,13 @@ Modification des ombres pour diminuer l'effet "pixelisé"
   
 [21/11/2018]  
 Gestion de plusieurs sources d'éclairage  
-
-[26/11/2018]
-Misa a jour du système d'éclairage afin qu'il soit plus cohérent.
-Ajout de types aux lumières :
-	Sun (Lumière directionnelle)
-	Spot (Lampe torche)
+  
+[26/11/2018]  
+Misa à jour du système d'éclairage afin qu'il soit plus cohérent.  
+Ajout de types aux lumières :  
+	Sun (Lumière directionnelle)  
+	Spot (Lampe torche)  
+  
+[04/12/2018]  
+Intégration des textures d'ombres directement dans les lumières.  
+Chaque lumière possède maintenant sa propre texture d'ombre.  
