@@ -1,7 +1,9 @@
 #include "Material.h"
 
-Material::Material(const MaterialCreateInfo &info) : mAmbiantColor_Kd(info.ambiantColor_Kd), mSpecularColor_Ks(info.specularColor_Ks),
-mSpecularExponent_Ns(info.specularExponent_Ns), mTransparency_Alpha(info.transparency_Alpha),mLightSensitive(info.lightSensitive), mTexture(info.texture){
+Material::Material(const MaterialCreateInfo &info)
+  : mAmbiantColor_Kd(info.ambiantColor_Kd), mSpecularColor_Ks(info.specularColor_Ks), mSpecularExponent_Ns(info.specularExponent_Ns),
+    mTransparency_Alpha(info.transparency_Alpha),mLightSensitive(info.lightSensitive), mTexture(info.texture), mNormalMap(info.normalMap)
+{
 
 }
 

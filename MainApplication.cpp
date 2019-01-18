@@ -13,6 +13,7 @@
 
 Shape_sptr CameraShape;
 OGL_ShaderProgram_sptr WireShader;
+Object_sptr testCube;
 
 MainApplication::MainApplication(const std::string &appName, unsigned int w, unsigned int h) : mName(appName), mWidth(w), mHeight(h), mGLFWwindow(nullptr), mScene(10,10,10,10),
 mInputManager(KeyMode::KEYCODE) { }
@@ -102,7 +103,7 @@ bool MainApplication::loadResources(void){
         Light_sptr tmpLights[2];
         tmpLights[0] = std::make_shared<Light>();
         tmpLights[0]->ambiantColor = glm::vec3(0.5f, 0.5f, 0.5f);
-        tmpLights[0]->ambiantColor = glm::vec3(0.1f, 0.8f, 0.1f);
+        //tmpLights[0]->ambiantColor = glm::vec3(0.1f, 0.8f, 0.1f);
         tmpLights[0]->power = glm::vec3(1.0f, 1.0f, 1.0f);
         //tmpLights[0]->power = glm::vec3(0.0f, 0.0f, 0.0f);
 
@@ -115,7 +116,7 @@ bool MainApplication::loadResources(void){
         tmpLights[1] = std::make_shared<Light>();
         //tmpLights[1]->ambiantColor = glm::vec3(0.8f, 0.1f, 0.1f);
         tmpLights[1]->ambiantColor = glm::vec3(0.5f, 0.5f, 0.5f);
-        tmpLights[1]->power = glm::vec3(1.0f, 1.0f, 1.0f);
+        tmpLights[1]->power = glm::vec3(0.0f, 0.0f, 0.0f);
         tmpLights[1]->transform->translate(glm::vec3(1.0f, 1.0f, 1.0f));
         tmpLights[1]->transform->rotate(glm::radians(45.0f), AXIS_UP, SpaceReference::LOCAL);
         tmpLights[1]->transform->rotate(glm::radians(-45.0f), AXIS_RIGHT, SpaceReference::LOCAL);
@@ -184,12 +185,45 @@ bool MainApplication::loadResources(void){
             objectInfo.shape = objectShape;
             Object_sptr object = mScene.getNewObject(objectInfo, &id);
             object->getTransform()->rotate(glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-            object->getTransform()->translate(glm::vec3(-4.999, 2.0f, -2.1), SpaceReference::WORLD);
+            object->getTransform()->translate(glm::vec3(-4.999, 5.0f, -2.1), SpaceReference::WORLD);
             objectInfo.material = objectMaterial2;
             object = mScene.getNewObject(objectInfo, &id);
             object->getTransform()->rotate(glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-            object->getTransform()->translate(glm::vec3(-4.999, 2.0f, 2.1), SpaceReference::WORLD);
+            object->getTransform()->translate(glm::vec3(-4.999, 5.0f, 2.1), SpaceReference::WORLD);
         }
+    }
+
+    { // Création du cube de test
+        unsigned int id;
+        ShapeCreateInfo shapeInfo = {};
+        shapeInfo.half_x = 2;
+        shapeInfo.half_y = 2;
+        shapeInfo.half_z = 2;
+        shapeInfo.sourceType = ShapeSource::BOX;
+        Shape_sptr shape = mScene.getNewShape(shapeInfo, &id);
+
+        OGL_TextureCreateInfo textureInfo;
+        textureInfo.fromFile_nFromBuffer = true;
+        textureInfo.sourceFile = "Data/Textures/normal1.png";
+        textureInfo.magFilter = GL_LINEAR;
+        Texture_sptr normalMap= mScene.getNewTexture(textureInfo, &id);
+
+        textureInfo.sourceFile = "Data/Textures/Rock_028_SD/Rock_028_COLOR.jpg";
+        Texture_sptr diffuseMap = mScene.getNewTexture(textureInfo, &id);
+
+        MaterialCreateInfo materialInfo = {};
+        materialInfo.ambiantColor_Kd = glm::vec3(0.7f, 0.7f, 0.7f);
+        materialInfo.lightSensitive = true;
+        materialInfo.specularColor_Ks = glm::vec3(0.5f, 0.5f, 0.5f);
+        materialInfo.specularExponent_Ns = 5.0f;
+        //materialInfo.texture = diffuseMap;
+        materialInfo.normalMap = normalMap;
+        Material_sptr material = mScene.getNewMaterial(materialInfo, &id);
+
+        ObjectCreateInfo objectInfo = {};
+        objectInfo.material = material;
+        objectInfo.shape = shape;
+        testCube = mScene.getNewObject(objectInfo, &id);
     }
 
     { //##########[CREATION DU RENDER]##########
@@ -203,9 +237,10 @@ bool MainApplication::loadResources(void){
    // Obj_Loader myObjLoader("Data/Test_Obj/cat/cat.obj", &mScene);
     //myObjLoader.loadFile("Data/Test_Obj/cat/cat.obj", &mScene);
 
-    Obj_Loader myObjLoader("Data/Test_Obj/ShadowTest/ShadowTest.obj", &mScene);
+
+    //Obj_Loader myObjLoader("Data/Test_Obj/ShadowTest/ShadowTest2.obj", &mScene);
   //  Obj_Loader myObjLoader("Data/Test_Obj/cat/cat.obj", &mScene);
-    myObjLoader.loadFile("Data/Test_Obj/cat/cat.obj", &mScene);
+   // myObjLoader.loadFile("Data/Test_Obj/cat/cat.obj", &mScene);
   //  myObjLoader.loadFile("Data/citroen_ds3/Citroen_DS3.obj", &mScene);
     mConeObject = mScene.getObject(1);
     mTransform = mConeObject->getTransform();
@@ -375,6 +410,8 @@ void MainApplication::processInput(void){
             mCamera.mTransform->rotate((float)-mInputManager.getMouseMoveY()*cameraRotSpeed, AXIS_RIGHT);
             mCamera.mTransform->rotate((float)-mInputManager.getMouseMoveX()*cameraRotSpeed, AXIS_UP, SpaceReference::WORLD);
         }else{
+            testCube->getTransform()->rotate((float)-mInputManager.getMouseMoveY()*cameraRotSpeed, AXIS_RIGHT);
+            testCube->getTransform()->rotate((float)-mInputManager.getMouseMoveX()*cameraRotSpeed, AXIS_UP, SpaceReference::WORLD);
             mLights[1]->transform->rotate((float)-mInputManager.getMouseMoveY()*cameraRotSpeed, AXIS_RIGHT);
             mLights[1]->transform->rotate((float)-mInputManager.getMouseMoveX()*cameraRotSpeed, AXIS_UP, SpaceReference::WORLD);
         }

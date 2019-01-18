@@ -28,6 +28,8 @@ OGL_ShaderProgram::OGL_ShaderProgram(const OGL_ShaderProgramCreateInfo &createIn
     glBindAttribLocation(mGL_ID, 0, "in_Vertex");
     glBindAttribLocation(mGL_ID, 1, "in_Normal");
     glBindAttribLocation(mGL_ID, 2, "in_UV");
+    glBindAttribLocation(mGL_ID, 3, "in_Tangent");
+    glBindAttribLocation(mGL_ID, 4, "in_BiTangent");
 
     glLinkProgram(mGL_ID);
 

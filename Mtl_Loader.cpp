@@ -80,10 +80,26 @@ void Mtl_Loader::loadLib(const std::string &fileName, Scene* scene){
             OGL_TextureCreateInfo textureInfo = {};
             textureInfo.fromFile_nFromBuffer = true;
             textureInfo.sourceFile = myFileRep+map_Kd;
+            textureInfo.magFilter = GL_LINEAR;
 
             unsigned int textSceneID;
             try{
                 constructInfo.texture = scene->getNewTexture(textureInfo, &textSceneID);
+            }catch(const geException &e){
+                throw e.extend("Mtl_Loader:loadLib : Failed to add texture to scene");
+            }
+           // std::cout << instruction << " = \"" << textureInfo.sourceFile << "\". SceneID = " << textSceneID << std::endl;
+        }else if(instruction == "map_Bump"){
+            std::string map_Bump;
+            stream >> map_Bump;
+            OGL_TextureCreateInfo textureInfo = {};
+            textureInfo.fromFile_nFromBuffer = true;
+            textureInfo.sourceFile = myFileRep+map_Bump;
+            textureInfo.magFilter = GL_LINEAR;
+
+            unsigned int textSceneID;
+            try{
+                constructInfo.normalMap = scene->getNewTexture(textureInfo, &textSceneID);
             }catch(const geException &e){
                 throw e.extend("Mtl_Loader:loadLib : Failed to add texture to scene");
             }

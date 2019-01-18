@@ -20,6 +20,7 @@ public:
     float mTransparency_Alpha;
     bool mLightSensitive;
     Texture_sptr mTexture;
+    Texture_sptr mNormalMap;
 };
 
 #endif // MATERIAL_H

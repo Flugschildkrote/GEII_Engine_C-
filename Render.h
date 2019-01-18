@@ -46,9 +46,14 @@ protected:
     /**[CAMERA]**/
     GLint mU_MVP;
     GLint mU_WorldEyePos;
-    OGL_ShaderProgram_uptr mSkyboxShader;
-/***************************************************************/
+    /**[NORMAL MAPPING]**/
+    GLuint mU_MatUseNormalMapping;
+    GLuint mU_MatNormalMap;
+    /**[SKYBOX]*/
     GLint mU_Sky_MVP, mU_Sky_Texture;
+/***************************************************************/
+
+    OGL_ShaderProgram_uptr mSkyboxShader;
 };
 
 class RenderShadowMapping : public Render{

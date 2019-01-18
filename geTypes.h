@@ -90,6 +90,7 @@ struct MaterialCreateInfo{
     float transparency_Alpha = 1.0f;
     bool lightSensitive = true;
     Texture_sptr texture = nullptr;
+    Texture_sptr normalMap = nullptr;
 };
 ///--------------------------------------------------
 

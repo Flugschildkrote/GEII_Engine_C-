@@ -65,6 +65,8 @@ void RenderPhong::initUniforms(void){
     mU_MatText = getUniform("texture_sampler", shader);
     mU_MatUseTexture = getUniform("useTexture", shader);
     mU_MatLightSensitive = getUniform("lightSensitive", shader);
+    mU_MatUseNormalMapping = getUniform("useNormalMap", shader);
+    mU_MatNormalMap = getUniform("normalMap", shader);
 
     /**[LIGHT]**/
     for(unsigned int i(0); i < MAX_LIGHTS; i++){
@@ -138,6 +140,7 @@ void RenderPhong::draw(Scene *scene, Camera *camera,const std::vector<Light_sptr
 //Fixe l'unitee de texture
     mShaderProgram->setUniformTexture(mU_MatText, 0);
     glActiveTexture(GL_TEXTURE0);
+    mShaderProgram->setUniformTexture(mU_MatNormalMap, 1);
 
 //Pour chaque primitive
     int nbprim=scene->getObjectsCount();
@@ -186,12 +189,24 @@ void RenderPhong::draw(Scene *scene, Camera *camera,const std::vector<Light_sptr
         mShaderProgram->setUniform(mU_MatNs, material->mSpecularExponent_Ns);
         mShaderProgram->setUniform(mU_MatLightSensitive, material->mLightSensitive);
 
+        // Texture classique
         Texture_sptr texture = material->mTexture;
         if(texture){
             mShaderProgram->setUniform(mU_MatUseTexture, true);
+            glActiveTexture(GL_TEXTURE0);
             texture->bind(true);
         }else{
             mShaderProgram->setUniform(mU_MatUseTexture, false);
+        }
+
+        // Texture de normale
+        texture = material->mNormalMap;
+        if(texture){
+            mShaderProgram->setUniform(mU_MatUseNormalMapping, true);
+            glActiveTexture(GL_TEXTURE1);
+            texture->bind(true);
+        }else{
+            mShaderProgram->setUniform(mU_MatUseNormalMapping, false);
         }
         Shape_sptr  objectShape = object->getShape();
         objectShape->draw();
@@ -241,13 +256,25 @@ void RenderPhong::draw(Scene *scene, Camera *camera,const std::vector<Light_sptr
         mShaderProgram->setUniform(mU_MatAlpha, material->mTransparency_Alpha);
        // std::cout << material->mTransparency_Alpha << std::endl;
 
-         Texture_sptr texture = material->mTexture;
+        // Texture classique
+        Texture_sptr texture = material->mTexture;
         if(texture){
             mShaderProgram->setUniform(mU_MatUseTexture, true);
+            //glActiveTexture(GL_TEXTURE0);
             texture->bind(true);
         }else{
             mShaderProgram->setUniform(mU_MatUseTexture, false);
         }
+
+        // Texture de normale
+      /*  texture = material->mNormalMap;
+        if(texture){
+            mShaderProgram->setUniform(mU_MatUseNormalMapping, true);
+            glActiveTexture(GL_TEXTURE1);
+            texture->bind(true);
+        }else{
+            mShaderProgram->setUniform(mU_MatUseNormalMapping, false);
+        }*/
 
         Shape_sptr  objectShape = object->getShape();
         objectShape->draw();

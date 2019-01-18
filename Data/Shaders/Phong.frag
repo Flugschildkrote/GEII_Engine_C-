@@ -13,6 +13,8 @@ uniform float color_Alpha;
 uniform sampler2D texture_sampler;
 uniform bool useTexture;
 uniform bool lightSensitive;
+uniform bool useNormalMap = false;
+uniform sampler2D normalMap;
    
 struct Light{
 	vec3 pos;
@@ -33,6 +35,8 @@ in vec2 textCoords;
 in vec3 worldPos;
 in vec3 sh_normal;
 in vec4 lightSpacePos[MAX_LIGHTS];
+in mat3 TBN_matrix;
+
 
 
 float ShadowCalculation(float bias, int lightIndex){
@@ -73,7 +77,7 @@ void main(void){
 		out_Color = tex*vec4(color_Kd, color_Alpha);
 		return;
 	}
-
+		
 	vec3 modelColor = tex.rgb*(color_Kd);
 	vec4 ambiantColor = tex*vec4(ambiantLight*color_Kd, color_Alpha);
 	
@@ -90,22 +94,38 @@ void main(void){
 	for(int i=0; i < lightCount; i++){
 		if(lights[i].type == LIGHT_SUN){
 			float shadow = (1.0-ShadowCalculation(bias, i));
-			if(shadow > 0){
+			//if(shadow > 0){
+			if(true){
 				vec3 pointToLight = normalize(-lights[i].dir);
 				vec3 normal=normalize(sh_normal);
-				vec3 eye= normalize(worldeye_pos);
-				vec3 reflectDir= normalize(reflect(pointToLight,normal));
 				float lightFactor = max(0.0, dot(normal, pointToLight));
-				float specularFactor = pow(max(0.0, dot(reflectDir,eye)), color_Ns);
 				
-				lightColorSum += lights[i].color*lightFactor*lights[i].intensity*shadow;
-				lightSpecularSum += lights[i].color*specularFactor*lights[i].intensity*shadow;
+				if(useNormalMap == true && lightFactor > 0.0){
+					normal = texture(normalMap, textCoords).rgb;
+					normal = normalize(normal * 2.0 - 1.0);
+					
+					normal = normalize(TBN_matrix * normal);
+					lightFactor = max(0.0, dot(normal, pointToLight));
+				}
+				vec3 eye= normalize(worldeye_pos);
+				//float lightFactor = max(0.0, dot(normal, pointToLight));
+				vec3 reflectDir= normalize(reflect(pointToLight,normal));
+				float specularFactor = pow(max(0.0, dot(reflectDir,eye)), color_Ns);
+				specularFactor = 0;
+				
+				lightColorSum += lights[i].color*lightFactor*lights[i].intensity/**shadow*/;
+				lightSpecularSum += lights[i].color*specularFactor*lights[i].intensity/**shadow*/;
 			}
 			
 			//shadowSum += ;
 		}else{
 			vec3 pointToLight = normalize(lights[i].pos-worldPos);
 			vec3 normal=normalize(sh_normal);
+			if(useNormalMap == true){
+					normal = texture(normalMap, textCoords).rgb;
+					normal = normalize(normal * 2.0 - 1.0);
+					normal = normalize(TBN_matrix * normal);
+			}
 			float angle = acos(dot(pointToLight, -lights[i].dir))*360.0/(2.0*3.14);
 			if(angle*2 <= lights[i].angle){
 				vec3 eye= normalize(worldeye_pos);
@@ -137,5 +157,5 @@ void main(void){
 	//if(dot(normal, -lightDir) < 0.25){ bias = 0.005; }else{ bias = 0.0005; }
 	//colorlight = vec4(colorlight.rgb*(1.0f-shadow), colorlight.a);
 	//out_Color = colorlight+colorambient;
-	out_Color = vec4(ambiantColor.rgb+(lightColorSum+lightSpecularSum)/*(1.0f-shadowSum)*/, ambiantColor.a);
+	out_Color = vec4(ambiantColor.rgb+(lightColorSum/*+lightSpecularSum*/), ambiantColor.a);
 }

@@ -71,6 +71,8 @@
 		<Unit filename="GL_ErrorHandler.h" />
 		<Unit filename="InputManager.cpp" />
 		<Unit filename="InputManager.h" />
+		<Unit filename="Light.cpp" />
+		<Unit filename="Light.h" />
 		<Unit filename="MainApplication.cpp" />
 		<Unit filename="MainApplication.h" />
 		<Unit filename="Material.cpp" />
