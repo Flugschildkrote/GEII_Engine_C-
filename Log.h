@@ -1,11 +1,13 @@
 #ifndef LOG_H_INCLUDED
 #define LOG_H_INCLUDED
 
-#include "core.h"
-#include "NamedObject.h"
-#include <iostream>
+#define ENGINE_DEBUG 1
+#define ENGINE_LOG_FULL_COLOR 0
 
-namespace Engine
+#include <iostream>
+#include <windows.h>
+
+namespace GEII
 {
     #ifdef _WIN32
        /* enum class Win32ConsoleColor
@@ -34,7 +36,7 @@ namespace Engine
         #define WIN_YELLOW      FOREGROUND_RED  | FOREGROUND_GREEN | FOREGROUND_INTENSITY
         #define WIN_WHITE       FOREGROUND_RED  | FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY
 
-        static void WIN32_SET_CONSOLE_COLOR(int color){
+        static void WIN32_SET_CONSOLE_COLOR(WORD color){
             HANDLE hStdout = GetStdHandle(STD_OUTPUT_HANDLE);
             SetConsoleTextAttribute(hStdout, color);
         }
@@ -42,15 +44,15 @@ namespace Engine
        // #define WIN32_SET_CONSOLE_COLOR(color)
     #endif // _WIN32*/
 
-    class Logger : public NamedObject
+    class Logger
     {
     public :
         Logger(const std::string &str)
-            : NamedObject(str)
+            : mName(str)
         {
         }
 
-        virtual ~Logger(void) override
+        virtual ~Logger(void)
         {
 
         }
@@ -124,10 +126,10 @@ namespace Engine
         }
 
     protected :
-        void beginLog(int color) const
+        void beginLog(WORD color) const
         {
             WIN32_SET_CONSOLE_COLOR(color);
-            std::cerr << mName << " : ";
+            std::cerr << "[" << mName << "] : ";
             #if ENGINE_LOG_FULL_COLOR == 0
                 WIN32_SET_CONSOLE_COLOR(WIN_WHITE);
             #endif // ENGINE_LOG_FULL_COLOR
@@ -151,16 +153,18 @@ namespace Engine
             sendLog(log);
             sendLog(args...);
         }
+
+        std::string mName;
     };
 
     extern Logger EngineConsoleLogger;
 }
 
 #if ENGINE_DEBUG == 1
-    #define ENGINE_LOG_INFO(...) Engine::EngineConsoleLogger.Info(__VA_ARGS__)
-    #define ENGINE_LOG_ERROR(...) Engine::EngineConsoleLogger.Error(__VA_ARGS__)
-    #define ENGINE_LOG_WARNING(...) Engine::EngineConsoleLogger.Warning(__VA_ARGS__)
-    #define ENGINE_LOG_SUCCESS(...) Engine::EngineConsoleLogger.Success(__VA_ARGS__)
+    #define ENGINE_LOG_INFO(...) GEII::EngineConsoleLogger.Info(__VA_ARGS__)
+    #define ENGINE_LOG_ERROR(...) GEII::EngineConsoleLogger.Error(__VA_ARGS__)
+    #define ENGINE_LOG_WARNING(...) GEII::EngineConsoleLogger.Warning(__VA_ARGS__)
+    #define ENGINE_LOG_SUCCESS(...) GEII::EngineConsoleLogger.Success(__VA_ARGS__)
 #else
     #define ENGINE_LOG_INFO(...)
     #define ENGINE_LOG_ERROR(...)

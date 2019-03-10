@@ -1,77 +1,102 @@
 #include "OGL_FrameBuffer.h"
-#include "geException.h"
+#include "Texture2D.h"
 
-OGL_FrameBuffer::OGL_FrameBuffer(const FrameBuffer_CreateInfo &info): OGL_Object(), mWidth(info.width), mHeight(info.height){
-    glGenFramebuffers(1, &mGL_ID);
-    glBindFramebuffer(GL_FRAMEBUFFER, mGL_ID);
+#if OGL_FRAMEBUFFER_DEBUG_ENABLE == 1 && GEII_DEBUG == 1
+    #define OGL_FRAMEBUFFER_DEBUG(x) x
+    #include "Log.h"
+#else
+    #define OGL_FRAMEBUFFER_DEBUG(x)
+#endif // OGL_FRAMEBUFFER_DEBUG_ENABLE
 
-       // glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D,info.attachments[0].textureID, 0);
-         //   glReadBuffer(GL_COLOR_ATTACHMENT0);
-           // glDrawBuffer(GL_COLOR_ATTACHMENT0);
+namespace GEII
+{
+    OGL_FRAMEBUFFER_DEBUG(Logger OGL_FrameBuffer_logger("FrameBuffer"));
 
-    for(unsigned int i=0; i < info.attachments.size(); i++){
-        glFramebufferTexture2D(GL_FRAMEBUFFER, info.attachments[i].attachment, GL_TEXTURE_2D,info.attachments[i].textureID, 0);
-        DEBUG_BLOCK(std::cerr << "Attaching texture " << info.attachments[i].textureID <<" attachment " << info.attachments[i].attachment << " to framebuffer " << mGL_ID << "\n");
-    }
+    OGL_FrameBuffer::OGL_FrameBuffer(unsigned int width, unsigned int height, AttachmentTarget colorTarget, AttachmentTarget depthTarget, int flags)
+        : OGL_Object(), mWidth(width), mHeight(height), mColorTexture(nullptr), mDepthTexture(nullptr), mAttachementTargets{colorTarget, depthTarget}
+    {
+        glGenFramebuffers(1, &mGL_ID);
+        glBindFramebuffer(GL_FRAMEBUFFER, mGL_ID);
 
-    if(info.flags & FRAMEBUFFER_DISABLE_READ){
-        DEBUG_BLOCK(std::cerr << "Disabling reading from frame buffer "<< mGL_ID << std::endl;)
-        glReadBuffer(GL_NONE);
-    }
-    if(info.flags & FRAMEBUFFER_DISABLE_WRITE){
-        DEBUG_BLOCK(std::cerr << "Disabling writing to frame buffer "<< mGL_ID << std::endl;)
-        glDrawBuffer(GL_NONE);
-    }
- /*   GLuint rboColorId;
-    glGenRenderbuffers(1, &rboColorId);
-    glBindRenderbuffer(GL_RENDERBUFFER, rboColorId);
-    glRenderbufferStorage(GL_RENDERBUFFER, GL_RGB, 512, 512);
+        switch(colorTarget){
+            case AttachmentTarget::Texture :
+                mColorTexture = std::make_shared<Texture2D>(width, height, GL_RGB, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
+                glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, mColorTexture->getID(), 0);
+                OGL_FRAMEBUFFER_DEBUG(OGL_FrameBuffer_logger.Info("Attaching texture ",  mColorTexture->getID(),  " attachment : COLOR_ATTACHMENT0 to framebuffer ", mGL_ID));
+                break;
+            case AttachmentTarget::RenderBuffer :
+                {
+                    GLuint rboColorId;
+                    glGenRenderbuffers(1, &rboColorId);
+                    glBindRenderbuffer(GL_RENDERBUFFER, rboColorId);
+                    glRenderbufferStorage(GL_RENDERBUFFER, GL_RGB, width, height);
+                    mRenderBuffers.push_back(rboColorId);
+                    OGL_FRAMEBUFFER_DEBUG(OGL_FrameBuffer_logger.Info("Attaching renderbuffer ",  rboColorId,  " attachment : COLOR_ATTACHMENT0 to framebuffer ", mGL_ID));
+                }
+                break;
+            case AttachmentTarget::None :
+            default :
+                break;
+        }
 
-    GLuint rboDepthId;
-    glGenRenderbuffers(1, &rboDepthId);
-    glBindRenderbuffer(GL_RENDERBUFFER, rboDepthId);
-    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, 512, 512);
+          switch(depthTarget){
+            case AttachmentTarget::Texture :
+                mDepthTexture = std::make_shared<ShadowMap>(width, height);
+                glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, mDepthTexture->getID(), 0);
+                OGL_FRAMEBUFFER_DEBUG(OGL_FrameBuffer_logger.Info("Attaching texture ",  mDepthTexture->getID(),  " attachment : GL_DEPTH_ATTACHMENT to framebuffer ", mGL_ID));
+                break;
+            case AttachmentTarget::RenderBuffer :
+                {
+                    GLuint rboDepthId;
+                    glGenRenderbuffers(1, &rboDepthId);
+                    glBindRenderbuffer(GL_RENDERBUFFER, rboDepthId);
+                    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, width, height);
+                    mRenderBuffers.push_back(rboDepthId);
+                    OGL_FRAMEBUFFER_DEBUG(OGL_FrameBuffer_logger.Info("Attaching renderbuffer ",  rboDepthId,  " attachment : GL_DEPTH_COMPONENT to framebuffer ", mGL_ID));
+                }
+                break;
+            case AttachmentTarget::None :
+            default :
+                break;
+        }
 
+        if(flags & FRAMEBUFFER_DISABLE_READ){
+            OGL_FRAMEBUFFER_DEBUG(OGL_FrameBuffer_logger.Info("Reading from frame buffer ", mGL_ID, " disabled."));
+            glReadBuffer(GL_NONE);
+        }
 
-// attach colorbuffer image to FBO
-    glFramebufferRenderbuffer(GL_FRAMEBUFFER,       // 1. fbo target: GL_FRAMEBUFFER
-                            GL_COLOR_ATTACHMENT0, // 2. color attachment point
-                            GL_RENDERBUFFER,      // 3. rbo target: GL_RENDERBUFFER
-                            rboColorId);          // 4. rbo ID
+        if(flags & FRAMEBUFFER_DISABLE_WRITE){
+            OGL_FRAMEBUFFER_DEBUG(OGL_FrameBuffer_logger.Info("Writing to frame buffer ", mGL_ID, " disabled."));
+            glDrawBuffer(GL_NONE);
+        }
 
-// attach depthbuffer image to FBO
-glFramebufferRenderbuffer(GL_FRAMEBUFFER,       // 1. fbo target: GL_FRAMEBUFFER
-                          GL_DEPTH_ATTACHMENT,  // 2. depth attachment point
-                          GL_RENDERBUFFER,      // 3. rbo target: GL_RENDERBUFFER
-                          rboDepthId);          // 4. rbo ID*/
-
-
-      /*  GLuint renderBuffer;
-        glGenRenderbuffers(1, &renderBuffer);
-        glBindRenderbuffer(GL_RENDERBUFFER, renderBuffer);
-            glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, 500, 600);
-            glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, renderBuffer);
-        glBindRenderbuffer(GL_RENDERBUFFER, 0);*/
-
-
-
-    if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE ){
-        //printf("#ERROR : Failed to create frame buffer object.");
+        if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE ){
+            glBindFramebuffer(GL_FRAMEBUFFER, 0);
+            destroy();
+            throw std::runtime_error("Failed to create Frame Buffer (id = "+ std::to_string(mGL_ID) + ").");
+        }
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
-        throw(geException("Failed to create Frame Buffer."));
+        OGL_FRAMEBUFFER_DEBUG(OGL_FrameBuffer_logger.Success("Frame buffer created (id=", mGL_ID, "), size = {", mWidth, "; ", mHeight, "}"));
     }
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-}
 
-OGL_FrameBuffer::~OGL_FrameBuffer(void){
-    //dtor
-}
 
-void OGL_FrameBuffer::bind(bool bindState) const{
-    glBindFramebuffer(GL_FRAMEBUFFER, bindState ? mGL_ID: 0);
-}
+    OGL_FrameBuffer::~OGL_FrameBuffer(void){
+        destroy();
+    }
 
-void OGL_FrameBuffer::destroy(void){
-    glDeleteFramebuffers(1, &mGL_ID);
-}
+    void OGL_FrameBuffer::bind(void) const{
+        glBindFramebuffer(GL_FRAMEBUFFER, mGL_ID);
+    }
+    void OGL_FrameBuffer::unbind(void) const{
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    }
 
+    void OGL_FrameBuffer::destroy(void) const{
+        glDeleteFramebuffers(1, &mGL_ID);
+        OGL_FRAMEBUFFER_DEBUG(OGL_FrameBuffer_logger.Info("Frame buffer deleted (id=", mGL_ID, ")"));
+        for(GLuint id : mRenderBuffers){
+            glDeleteRenderbuffers(1, &id);
+            OGL_FRAMEBUFFER_DEBUG(OGL_FrameBuffer_logger.Info("Render buffer deleted (id=", id, ")"));
+        }
+    }
+}

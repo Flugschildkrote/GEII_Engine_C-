@@ -2,6 +2,6 @@
 #include <iostream>
 //#include <GLFW/glfw3.h>
 
-namespace Engine{
+namespace GEII{
     Logger EngineConsoleLogger("Engine Logger");
 }

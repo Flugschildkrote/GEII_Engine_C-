@@ -1,14 +1,20 @@
 #include "Object.h"
 
-Object::Object(const ObjectCreateInfo &info) : mMaterial(info.material.lock()), mShape(info.shape.lock()), mTransform(std::make_shared<Transform>()),/* mPickingID(0),*/ mIsEnabled(true){
-    CHECK_OBJECT(std::cerr << "Warning : Object must be created with a valid shape\n", std::cerr <<  "Warning : Object must be created with a valid shape\n")
+namespace GEII
+{
+    Object::Object(const Shape_sptr &shape, const Material_sptr& material, const Transform_sptr& transform)
+        : mShape(shape), mMaterial(material), mTransform(transform), mIsEnabled(true)
+    {
+        if(!mTransform){
+            mTransform = std::make_shared<Transform>();
+        }
+    }
+
+    Object::~Object(void){
+
+    }
+
+    void Object::setEnabled(bool state){ mIsEnabled = state; }
 }
-
-Object::~Object(void){
-
-}
-
-void Object::setEnabled(bool state){ mIsEnabled = state; }
-
 
 

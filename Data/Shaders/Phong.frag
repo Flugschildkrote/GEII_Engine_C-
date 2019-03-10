@@ -6,6 +6,7 @@
 
 layout(location = 0) out vec4 out_Color;
 
+uniform vec3 sceneAmbiantColor;
 uniform vec3 color_Kd;
 uniform vec3 color_Ks;
 uniform float color_Ns;
@@ -66,8 +67,6 @@ float ShadowCalculation(float bias, int lightIndex){
     return shadow;
 }
 
-vec3 ambiantLight = vec3(0.2f, 0.2f, 0.2f);
-
 void main(void){
 	vec4 tex;
 	if(useTexture == true){ tex = texture(texture_sampler,textCoords); }else{ tex = vec4(1.0, 1.0, 1.0, 1.0); }
@@ -77,9 +76,11 @@ void main(void){
 		out_Color = tex*vec4(color_Kd, color_Alpha);
 		return;
 	}
-		
 	vec3 modelColor = tex.rgb*(color_Kd);
-	vec4 ambiantColor = tex*vec4(ambiantLight*color_Kd, color_Alpha);
+	if(tex.a == 0){
+		discard;
+	}
+	vec4 ambiantColor = tex*vec4(sceneAmbiantColor*color_Kd, color_Alpha);
 	
 	vec3 lightColorSum = vec3(0.0f, 0.0f, 0.0f);
 	vec3 lightSpecularSum = vec3(0.0f, 0.0f, 0.0f);
@@ -94,8 +95,8 @@ void main(void){
 	for(int i=0; i < lightCount; i++){
 		if(lights[i].type == LIGHT_SUN){
 			float shadow = (1.0-ShadowCalculation(bias, i));
-			//if(shadow > 0){
-			if(true){
+			if(shadow > 0){
+			//if(true){
 				vec3 pointToLight = normalize(-lights[i].dir);
 				vec3 normal=normalize(sh_normal);
 				float lightFactor = max(0.0, dot(normal, pointToLight));
@@ -157,5 +158,5 @@ void main(void){
 	//if(dot(normal, -lightDir) < 0.25){ bias = 0.005; }else{ bias = 0.0005; }
 	//colorlight = vec4(colorlight.rgb*(1.0f-shadow), colorlight.a);
 	//out_Color = colorlight+colorambient;
-	out_Color = vec4(ambiantColor.rgb+(lightColorSum/*+lightSpecularSum*/), ambiantColor.a);
+	out_Color = vec4(ambiantColor.rgb+(lightColorSum+lightSpecularSum), ambiantColor.a);
 }

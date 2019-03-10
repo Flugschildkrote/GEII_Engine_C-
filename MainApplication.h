@@ -8,12 +8,14 @@
 #include "InputManager.h"
 #include "RenderPicking.h"
 #include "Transform.h"
+//#include "OGL_FrameBuffer.h"
 
 #define SWAP_INTERVAL 0
 
-
-
-class OGL_FrameBuffer;
+namespace GEII
+{
+    class OGL_FrameBuffer;
+}
 
 class MainApplication
 {
@@ -39,12 +41,12 @@ private:
     unsigned int mWidth, mHeight;
     GLFWwindow* mGLFWwindow;
     Scene mScene;
-    Camera mCamera;
+    GEII::Camera mCamera;
     InputManager mInputManager;
-    std::unique_ptr<RenderPhong> mPhongRender;
-    std::unique_ptr<RenderPicking> mRenderPicking;
-    std::unique_ptr<RenderShadowMapping> mShadowMapping;
-    std::vector<std::unique_ptr<OGL_FrameBuffer> > mFrameBuffers;
+    std::unique_ptr<GEII::RenderPhong> mPhongRender;
+    std::unique_ptr<GEII::RenderPicking> mRenderPicking;
+    std::unique_ptr<GEII::RenderShadowMapping> mShadowMapping;
+    std::vector<std::shared_ptr<GEII::OGL_FrameBuffer> > mFrameBuffers;
     std::vector<Light_sptr> mLights;
    // std::vector<Texture_sptr> mShadowMaps;
     Object_sptr mConeObject;

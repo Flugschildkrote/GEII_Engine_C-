@@ -4,53 +4,47 @@
 #include <vector>
 #include <memory>
 
-#include "Shape.h"
 #include "geHeader.h"
+
+using namespace GEII;
 
 using Material_SceneID = unsigned int;
 class Scene{
 public:
-    Scene(unsigned int shapesCount, unsigned int materialsCount, unsigned int texturesCount, unsigned int objectCount);
+    Scene(unsigned int objectCount, const glm::vec3 &ambiantColor);
     virtual ~Scene(void);
+
     void freeAll(void);
 
-    Shape_sptr getNewShape(const ShapeCreateInfo &info, unsigned int* id = nullptr);
-    Material_sptr getNewMaterial(const MaterialCreateInfo &info, unsigned int* id = nullptr);
-    Texture_sptr getNewTexture(const OGL_TextureCreateInfo &info, unsigned int* id = nullptr);
-    Object_sptr getNewObject(const ObjectCreateInfo &info, unsigned int* id = nullptr);
-
-    Shape_sptr getShape(unsigned int index) const;
-    Material_sptr getMaterial(unsigned int index) const;
-    Texture_sptr getTexture(unsigned int index) const;
     Object_sptr getObject(unsigned int index) const;
     Object_sptr getByPickingID(const PickingID_t &id) const;
     Object_sptr getSkybox(void) const;
 
-    unsigned int getShapesCount(void) const;
-    unsigned int getMaterialsCount(void) const;
-    unsigned int getTexturesCount(void) const;
     unsigned int getObjectsCount(void) const;
     bool hasSkybox(void) const;
 
-    bool removeShape(unsigned int index);
-    bool removeMaterial(unsigned int index);
-    bool removeTexture(unsigned int index);
+    int addObject(const Object_sptr& object);
     bool removeObject(unsigned int index);
+
+    int addLight(const Light_sptr& light);
+    Light_sptr getLight(unsigned int index) const;
+    bool removeLight(unsigned int index);
+    unsigned int getLightCount(void) const;
 
     void setSkybox(const Object_sptr &skybox);
 
     void sortTransparentObjects(void);
     unsigned int getTranparentObjectsCount(void) const;
+    glm::vec3 getAmbiantColor(void) const { return mAmbiantColor; }
 
   ///  void SceneSwapObjects(unsigned int p0, unsigned int p1);
   ///  unsigned int SceneGetObjectTriangleNumber(unsigned int p);
 
 private:
-    std::vector<Shape_sptr> mShapes;
-    std::vector<Material_sptr> mMaterials;
-    std::vector<Texture_sptr> mTextures;
     std::vector<Object_sptr> mObjects;
+    std::vector<Light_sptr> mLights;
     Object_sptr mSkybox;
+    glm::vec3 mAmbiantColor;
 };
 
 #endif // SCENE_H

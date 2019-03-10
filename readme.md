@@ -79,3 +79,8 @@ Ajout de types aux lumières :
 [04/12/2018]  
 Intégration des textures d'ombres directement dans les lumières.  
 Chaque lumière possède maintenant sa propre texture d'ombre.  
+
+[10/02/2019]
+Intégration des lumières à la classe Scène
+Chaque lumière possède maintenant son propre FrameBuffer
+Documentation de certaines classes en utilisant Doxygen
