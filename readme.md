@@ -84,3 +84,4 @@ Chaque lumière possède maintenant sa propre texture d'ombre.
 Intégration des lumières à la classe Scène
 Chaque lumière possède maintenant son propre FrameBuffer
 Documentation de certaines classes en utilisant Doxygen
+Modification du comportement de certaines classes.
